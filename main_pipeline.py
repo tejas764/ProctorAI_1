@@ -132,6 +132,11 @@ class PipelineConfig:
     lipsync_verify_threshold: float
     suspicious_streak_for_verify: int
     audio_sync_low_score_threshold: float
+    user_id: str
+    voice_db_path: str
+    speaker_window_seconds: float
+    speaker_drift_threshold: float
+    terminate_on_cheating_alert: bool
 
 
 def load_config(path: str = "config.yaml") -> PipelineConfig:
@@ -150,6 +155,11 @@ def load_config(path: str = "config.yaml") -> PipelineConfig:
         lipsync_verify_threshold=float(cfg.get("lipsync_verify_threshold", 0.45)),
         suspicious_streak_for_verify=int(cfg.get("suspicious_streak_for_verify", 8)),
         audio_sync_low_score_threshold=float(cfg.get("audio_sync_low_score_threshold", 0.40)),
+        user_id=str(cfg.get("user_id", "default_user")),
+        voice_db_path=str(cfg.get("voice_db_path", "proctorguard.db")),
+        speaker_window_seconds=float(cfg.get("speaker_window_seconds", 2.5)),
+        speaker_drift_threshold=float(cfg.get("speaker_drift_threshold", 0.08)),
+        terminate_on_cheating_alert=bool(cfg.get("terminate_on_cheating_alert", True)),
     )
 
 
@@ -176,7 +186,14 @@ class ExamProctorPipeline:
             pad_ratio=config.hand_pad_ratio,
         )
         self.av = AVCorrelationEngine()
-        self.speaker = SpeakerVerifier(config.sample_rate, similarity_threshold=config.speaker_threshold)
+        self.speaker = SpeakerVerifier(
+            sample_rate=config.sample_rate,
+            similarity_threshold=config.speaker_threshold,
+            drift_threshold=config.speaker_drift_threshold,
+            window_seconds=config.speaker_window_seconds,
+            user_id=config.user_id,
+            db_path=config.voice_db_path,
+        )
         self.verifier = LipSyncVerifier(threshold=config.lipsync_verify_threshold)
         self.audio_sync = AudioSyncVerifier(sample_rate=config.sample_rate)
         self.risk = RiskEngine(log_dir="proctor_logs")
@@ -185,6 +202,7 @@ class ExamProctorPipeline:
         self.last_event_time: dict[str, float] = {}
         self.motion_series: deque[float] = deque(maxlen=90)  # ~3 sec @ 30fps
         self.audio_series: deque[float] = deque(maxlen=90)
+        self.consecutive_voice_violations = 0
 
     def _log_once(self, reason: str, timestamp_s: float, frame: np.ndarray, audio: np.ndarray, details: dict) -> None:
         cooldown_s = 2.0
@@ -213,6 +231,8 @@ class ExamProctorPipeline:
                 audio_chunk = self.audio.audio_chunk()
                 audio_present = self.audio.vad()
                 audio_energy = self.audio.rms()
+                speaker_window_audio = self.audio.latest_seconds(self.cfg.speaker_window_seconds)
+                spk = self.speaker.verify(speaker_window_audio, audio_present=audio_present, timestamp_s=t)
 
                 rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                 face_result = self.face_mesh.process(rgb)
@@ -223,7 +243,8 @@ class ExamProctorPipeline:
                 mar = 0.0
                 mouth_visible = False
                 lip_sync_status = "NO_FACE"
-                speaker_sim: Optional[float] = None
+                speaker_sim: Optional[float] = spk.similarity
+                speaker_drift: Optional[float] = spk.drift
                 face_consistent = True
                 occl_iou = 0.0
                 av_status = "IDLE"
@@ -231,6 +252,9 @@ class ExamProctorPipeline:
                 audio_sync_score = 1.0
                 audio_sync_flags: list[str] = []
                 av_offset_ms: Optional[float] = None
+                speaking_face_visible = False
+                security_reason = ""
+                escalation_state = "NONE"
 
                 if num_faces >= 1:
                     primary = faces[0]
@@ -243,6 +267,7 @@ class ExamProctorPipeline:
                     )
                     mouth_visible = occ.mouth_visible
                     occl_iou = occ.overlap_iou
+                    speaking_face_visible = mouth_visible and mar >= 0.02
 
                     av_res = self.av.update(audio_present, audio_energy, mar)
                     av_status = av_res.status
@@ -328,17 +353,6 @@ class ExamProctorPipeline:
                                 {"face_similarity": round(sim, 4)},
                             )
 
-                    # Speaker verification.
-                    spk = self.speaker.verify(self.audio.latest_seconds(1.2), audio_present=audio_present)
-                    speaker_sim = spk.similarity
-                    if spk.is_mismatch:
-                        self._log_once(
-                            "VOICE_MISMATCH",
-                            t,
-                            frame,
-                            self.audio.latest_seconds(2.5),
-                            {"speaker_similarity": round(float(spk.similarity), 4) if spk.similarity is not None else None},
-                        )
                 else:
                     self.motion_series.append(0.0)
                     self.audio_series.append(audio_energy)
@@ -360,6 +374,91 @@ class ExamProctorPipeline:
                         self.audio.latest_seconds(2.5),
                         {"num_faces": num_faces},
                     )
+
+                if audio_present and not spk.has_reference:
+                    self._log_once(
+                        "ENROLLMENT_MISSING",
+                        t,
+                        frame,
+                        self.audio.latest_seconds(2.5),
+                        {"reason": spk.reason, "user_id": self.cfg.user_id},
+                    )
+                if spk.is_mismatch:
+                    self._log_once(
+                        "VOICE_MISMATCH",
+                        t,
+                        frame,
+                        self.audio.latest_seconds(2.5),
+                        {
+                            "speaker_similarity": round(float(spk.similarity), 4) if spk.similarity is not None else None,
+                            "threshold": round(float(spk.threshold), 4) if spk.threshold is not None else None,
+                            "reason": spk.reason,
+                        },
+                    )
+                elif spk.is_drift:
+                    self._log_once(
+                        "VOICE_DRIFT",
+                        t,
+                        frame,
+                        self.audio.latest_seconds(2.5),
+                        {
+                            "speaker_similarity": round(float(spk.similarity), 4) if spk.similarity is not None else None,
+                            "drift": round(float(spk.drift), 4) if spk.drift is not None else None,
+                            "drift_threshold": round(float(spk.drift_threshold), 4) if spk.drift_threshold is not None else None,
+                        },
+                    )
+
+                audio_without_visible_face = audio_present and (num_faces != 1 or not speaking_face_visible)
+                segment_violation = bool(spk.is_mismatch or spk.is_drift or audio_without_visible_face)
+                if segment_violation:
+                    reasons = []
+                    if spk.is_mismatch:
+                        reasons.append("similarity_below_threshold")
+                    if spk.is_drift:
+                        reasons.append("drift_above_threshold")
+                    if audio_without_visible_face:
+                        reasons.append("audio_without_visible_speaking_face")
+                    security_reason = ",".join(reasons)
+                    self.consecutive_voice_violations += 1
+                    if self.consecutive_voice_violations == 1:
+                        escalation_state = "WARNING"
+                        self._log_once(
+                            "VOICE_POLICY_WARNING",
+                            t,
+                            frame,
+                            self.audio.latest_seconds(2.5),
+                            {"reason": security_reason, "consecutive": self.consecutive_voice_violations},
+                        )
+                    elif self.consecutive_voice_violations == 2:
+                        escalation_state = "SOFT_FLAG"
+                        self._log_once(
+                            "VOICE_POLICY_SOFT_FLAG",
+                            t,
+                            frame,
+                            self.audio.latest_seconds(2.5),
+                            {"reason": security_reason, "consecutive": self.consecutive_voice_violations},
+                        )
+                    else:
+                        escalation_state = "CHEATING_ALERT"
+                        self._log_once(
+                            "CHEATING_ALERT",
+                            t,
+                            frame,
+                            self.audio.latest_seconds(2.5),
+                            {"reason": security_reason, "consecutive": self.consecutive_voice_violations},
+                        )
+                        if self.cfg.terminate_on_cheating_alert:
+                            lines = [
+                                "Session terminated by security policy.",
+                                f"Reason: {security_reason}",
+                                f"Consecutive violations: {self.consecutive_voice_violations}",
+                            ]
+                            draw_overlay(frame, lines)
+                            cv2.imshow("Exam Proctoring Lip-Sync Pipeline", frame)
+                            cv2.waitKey(900)
+                            break
+                else:
+                    self.consecutive_voice_violations = 0
 
                 # Trigger heavy verification layer only when suspicious persists.
                 suspicious = lip_sync_status in ("SUSPICIOUS", "MOUTH_OCCLUDED")
@@ -390,8 +489,13 @@ class ExamProctorPipeline:
                     f"AudioSync Score: {audio_sync_score:.3f}  Offset(ms): {av_offset_ms if av_offset_ms is not None else float('nan'):.1f}",
                     f"AudioSync Flags: {', '.join(audio_sync_flags) if audio_sync_flags else 'NONE'}",
                     f"Mouth IoU(Hand): {occl_iou:.3f}  Mouth Visible: {'YES' if mouth_visible else 'NO'}",
-                    f"Speaker Similarity: {speaker_sim if speaker_sim is not None else float('nan'):.3f}",
+                    f"Speaker Similarity: {speaker_sim if speaker_sim is not None else float('nan'):.3f} (thr={spk.threshold if spk.threshold is not None else float('nan'):.3f})",
+                    f"Voice Drift: {speaker_drift if speaker_drift is not None else float('nan'):.3f} (thr={spk.drift_threshold if spk.drift_threshold is not None else float('nan'):.3f})",
+                    f"Voice Base Match: {spk.status_color.upper()} ({spk.reason})",
                     f"Face Consistent: {'YES' if face_consistent else 'NO'}",
+                    f"Visible Speaking Face: {'YES' if speaking_face_visible else 'NO'}",
+                    f"Segment Security: {'ALERT' if segment_violation else 'OK'} {security_reason if security_reason else ''}",
+                    f"Escalation: {escalation_state}  Consecutive={self.consecutive_voice_violations}",
                     f"Verification Score (on trigger): {verify_text}",
                     f"Risk Score: {self.risk.risk_score}  Level: {self.risk.level()}",
                     "Press Q to quit",

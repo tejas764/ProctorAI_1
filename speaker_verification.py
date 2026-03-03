@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from collections import deque
 from typing import Optional
 
 import numpy as np
 
+from voice_biometric_store import SpeakerProfile, VoiceBiometricStore
+from voice_features import cosine_similarity, extract_voice_features
 
 def _l2_normalize(v: np.ndarray) -> np.ndarray:
     n = np.linalg.norm(v)
@@ -55,30 +58,139 @@ def cosine_similarity(a: np.ndarray, b: np.ndarray) -> float:
 @dataclass
 class SpeakerVerificationResult:
     similarity: Optional[float]
+    drift: Optional[float]
     is_mismatch: bool
+    is_drift: bool
     has_reference: bool
+    decision: str
+    reason: str
+    threshold: Optional[float]
+    drift_threshold: Optional[float]
+    status_color: str
 
 
 class SpeakerVerifier:
-    def __init__(self, sample_rate: int, similarity_threshold: float = 0.72) -> None:
+    def __init__(
+        self,
+        sample_rate: int,
+        similarity_threshold: float = 0.72,
+        drift_threshold: float = 0.08,
+        window_seconds: float = 2.5,
+        user_id: str = "default_user",
+        db_path: str = "proctorguard.db",
+    ) -> None:
         self.sample_rate = sample_rate
         self.similarity_threshold = similarity_threshold
-        self.reference_embedding: Optional[np.ndarray] = None
+        self.drift_threshold = drift_threshold
+        self.window_seconds = window_seconds
+        self.user_id = user_id
+        self.store = VoiceBiometricStore(db_path=db_path)
+        self.profile: Optional[SpeakerProfile] = self.store.load_profile(user_id)
+        self.similarity_history: deque[float] = deque(maxlen=24)
 
-    def bootstrap_reference(self, audio: np.ndarray) -> None:
-        emb = simple_speaker_embedding(audio, self.sample_rate)
-        if np.linalg.norm(emb) > 1e-6:
-            self.reference_embedding = emb
+    def _effective_thresholds(self) -> tuple[float, float]:
+        if self.profile is None:
+            return self.similarity_threshold, self.drift_threshold
+        return self.profile.base_threshold, self.profile.drift_threshold
 
-    def verify(self, audio: np.ndarray, audio_present: bool) -> SpeakerVerificationResult:
+    def reload_profile(self) -> None:
+        self.profile = self.store.load_profile(self.user_id)
+
+    def verify(self, audio: np.ndarray, audio_present: bool, timestamp_s: float) -> SpeakerVerificationResult:
         if not audio_present:
-            return SpeakerVerificationResult(None, False, self.reference_embedding is not None)
+            return SpeakerVerificationResult(
+                similarity=None,
+                drift=None,
+                is_mismatch=False,
+                is_drift=False,
+                has_reference=self.profile is not None and self.profile.enrollment_complete,
+                decision="NO_SPEECH",
+                reason="audio_not_present",
+                threshold=self._effective_thresholds()[0],
+                drift_threshold=self._effective_thresholds()[1],
+                status_color="green",
+            )
 
-        emb = simple_speaker_embedding(audio, self.sample_rate)
-        if self.reference_embedding is None:
-            self.bootstrap_reference(audio)
-            return SpeakerVerificationResult(None, False, False)
+        if self.profile is None or not self.profile.enrollment_complete:
+            res = SpeakerVerificationResult(
+                similarity=None,
+                drift=None,
+                is_mismatch=True,
+                is_drift=False,
+                has_reference=False,
+                decision="VIOLATION",
+                reason="enrollment_incomplete_or_missing",
+                threshold=self._effective_thresholds()[0],
+                drift_threshold=self._effective_thresholds()[1],
+                status_color="red",
+            )
+            self.store.log_runtime_match(
+                user_id=self.user_id,
+                timestamp_s=timestamp_s,
+                similarity=None,
+                drift=None,
+                decision=res.decision,
+                reason=res.reason,
+            )
+            return res
 
-        sim = cosine_similarity(self.reference_embedding, emb)
-        mismatch = sim < self.similarity_threshold
-        return SpeakerVerificationResult(similarity=sim, is_mismatch=mismatch, has_reference=True)
+        features = extract_voice_features(audio, self.sample_rate)
+        sim = cosine_similarity(self.profile.mean_embedding, features.embedding)
+        self.similarity_history.append(sim)
+        trend = float(np.mean(self.similarity_history)) if self.similarity_history else sim
+        drift = float(abs(sim - trend))
+
+        threshold, drift_threshold = self._effective_thresholds()
+        # Allow natural short-term voice variation before declaring mismatch.
+        mismatch_margin = 0.04
+        effective_mismatch_threshold = max(0.0, threshold - mismatch_margin)
+        mismatch = sim < effective_mismatch_threshold
+
+        # Drift detection combines temporal instability and tolerant pitch-range checks.
+        pitch_span = max(20.0, self.profile.pitch_max - self.profile.pitch_min)
+        pitch_margin = max(20.0, 0.25 * pitch_span)
+        pitch_out_of_range = bool(
+            features.pitch_mean > 0.0
+            and (
+                features.pitch_mean < (self.profile.pitch_min - pitch_margin)
+                or features.pitch_mean > (self.profile.pitch_max + pitch_margin)
+            )
+        )
+        stable_history = len(self.similarity_history) >= 6
+        effective_drift_threshold = max(0.12, drift_threshold)
+        is_drift = (stable_history and drift > effective_drift_threshold) or pitch_out_of_range
+
+        if mismatch:
+            decision = "VIOLATION"
+            reason = "different_speaker_detected"
+            color = "red"
+        elif is_drift:
+            decision = "VIOLATION"
+            reason = "voice_drift_detected"
+            color = "yellow"
+        else:
+            decision = "MATCH"
+            reason = "base_case_match"
+            color = "green"
+
+        res = SpeakerVerificationResult(
+            similarity=sim,
+            drift=drift,
+            is_mismatch=mismatch,
+            is_drift=is_drift,
+            has_reference=True,
+            decision=decision,
+            reason=reason,
+            threshold=threshold,
+            drift_threshold=drift_threshold,
+            status_color=color,
+        )
+        self.store.log_runtime_match(
+            user_id=self.user_id,
+            timestamp_s=timestamp_s,
+            similarity=sim,
+            drift=drift,
+            decision=res.decision,
+            reason=res.reason,
+        )
+        return res

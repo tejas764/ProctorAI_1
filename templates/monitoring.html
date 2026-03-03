@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Live LipSync + Voice Monitor</title>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --card: #161b22;
+      --panel: #1f2630;
+      --text: #e6edf3;
+      --muted: #9aa4b2;
+      --ok: #2ea043;
+      --warn: #d29922;
+      --err: #f85149;
+      --accent: #58a6ff;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Tahoma, sans-serif;
+      background: radial-gradient(circle at top, #1b2735 0%, var(--bg) 45%);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .screen {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 320px;
+      gap: 20px;
+      position: relative;
+    }
+    .flag {
+      position: fixed;
+      top: 14px;
+      right: 18px;
+      background: rgba(248,81,73,0.18);
+      border: 1px solid #f85149;
+      color: #ffd3d0;
+      border-radius: 999px;
+      padding: 8px 14px;
+      font-weight: 800;
+      z-index: 1000;
+    }
+    .main, .status {
+      background: var(--card);
+      border: 1px solid #2d333b;
+      border-radius: 16px;
+      padding: 18px;
+    }
+    .title {
+      font-size: 20px;
+      font-weight: 800;
+      margin-bottom: 10px;
+    }
+    .video-wrap {
+      border-radius: 14px;
+      overflow: hidden;
+      border: 1px solid #2d333b;
+      background: #000;
+      aspect-ratio: 16 / 9;
+    }
+    .video-frame {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transform: scaleX(-1);
+    }
+    .sub {
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+    .item {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 10px;
+      border-radius: 10px;
+      background: var(--panel);
+      margin-bottom: 8px;
+      align-items: center;
+    }
+    .pill {
+      font-weight: 700;
+      font-size: 12px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: #30363d;
+    }
+    .ok { background: rgba(46,160,67,0.22); color: #7ee787; }
+    .warn { background: rgba(210,153,34,0.22); color: #f2cc60; }
+    .err { background: rgba(248,81,73,0.22); color: #ff7b72; }
+    .val { font-weight: 700; color: #d2e5ff; }
+    .meter {
+      width: 140px;
+      height: 10px;
+      border-radius: 999px;
+      background: #0f141b;
+      border: 1px solid #2d333b;
+      overflow: hidden;
+    }
+    .meter-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #f85149, #d29922 55%, #2ea043);
+      transition: width 0.2s linear;
+    }
+    @media (max-width: 900px) {
+      .screen { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="flag" id="flagCounter">Flags: 0</div>
+
+  <div class="screen">
+    <section class="main">
+      <div class="title">Live LipSync + Voice Monitoring</div>
+      <div class="video-wrap"><img id="camFrame" class="video-frame" alt="Live monitor frame" /></div>
+      <div class="sub" id="lastReason">Last flag: none</div>
+    </section>
+
+    <aside class="status">
+      <div class="item"><span>User ID</span><span id="userId" class="val">-</span></div>
+      <div class="item"><span>Faces</span><span id="faces" class="val">0</span></div>
+      <div class="item"><span>Audio</span><span id="audio" class="pill warn">OFF</span></div>
+      <div class="item"><span>Lip Sync</span><span id="lipsync" class="pill warn">IDLE</span></div>
+      <div class="item"><span>Speaker Match</span><span id="spk" class="pill warn">UNKNOWN</span></div>
+      <div class="item"><span>Similarity Bar</span><div class="meter"><div id="simBar" class="meter-fill"></div></div></div>
+      <div class="item"><span>Similarity</span><span id="sim" class="val">-</span></div>
+      <div class="item"><span>Threshold</span><span id="thr" class="val">-</span></div>
+      <div class="item"><span>Drift</span><span id="drift" class="val">-</span></div>
+      <div class="item"><span>Voice Stability</span><span id="stability" class="pill warn">Stable</span></div>
+      <div class="item"><span>Verification</span><span id="vstate" class="pill warn">YELLOW</span></div>
+      <div class="item"><span>Pitch (Hz)</span><span id="pitch" class="val">-</span></div>
+      <div class="item"><span>Pitch Range</span><span id="pitchRange" class="val">-</span></div>
+      <div class="item"><span>Pitch/Freq Match</span><span id="pfMatch" class="pill warn">UNKNOWN</span></div>
+      <div class="item"><span>Active Speaker</span><span id="activeSpk" class="pill warn">UNKNOWN</span></div>
+      <div class="item"><span>Face Count</span><span id="faceCountState" class="pill warn">UNKNOWN</span></div>
+      <div class="item"><span>Speaker Count</span><span id="spkCount" class="val">1</span></div>
+      <div class="item"><span>AudioSync Score</span><span id="syncScore" class="val">-</span></div>
+      <div class="item"><span>AudioSync Flags</span><span id="syncFlags" class="val">NONE</span></div>
+      <div class="item"><span>Verify Score</span><span id="verifyScore" class="val">-</span></div>
+      <div class="item"><span>Risk Score</span><span id="riskScore" class="val">0</span></div>
+      <div class="item"><span>Risk Level</span><span id="riskLevel" class="pill warn">NORMAL</span></div>
+      <div class="item"><span>Escalation</span><span id="escalation" class="pill warn">NORMAL</span></div>
+      <div class="item"><span>Multiple Voice</span><span id="mv" class="pill warn">NO</span></div>
+      <div class="item"><span>MV Reason</span><span id="mvReason" class="val">-</span></div>
+      <div class="item"><span>Monitor</span><span id="run" class="pill warn">STARTING</span></div>
+      <div class="item"><span>Error</span><span id="err" class="val">-</span></div>
+    </aside>
+  </div>
+
+  <script>
+    const userIdEl = document.getElementById("userId");
+    const facesEl = document.getElementById("faces");
+    const audioEl = document.getElementById("audio");
+    const lipEl = document.getElementById("lipsync");
+    const spkEl = document.getElementById("spk");
+    const simBarEl = document.getElementById("simBar");
+    const simEl = document.getElementById("sim");
+    const thrEl = document.getElementById("thr");
+    const driftEl = document.getElementById("drift");
+    const stabilityEl = document.getElementById("stability");
+    const vstateEl = document.getElementById("vstate");
+    const pitchEl = document.getElementById("pitch");
+    const pitchRangeEl = document.getElementById("pitchRange");
+    const pfMatchEl = document.getElementById("pfMatch");
+    const activeSpkEl = document.getElementById("activeSpk");
+    const faceCountStateEl = document.getElementById("faceCountState");
+    const spkCountEl = document.getElementById("spkCount");
+    const syncScoreEl = document.getElementById("syncScore");
+    const syncFlagsEl = document.getElementById("syncFlags");
+    const verifyScoreEl = document.getElementById("verifyScore");
+    const riskScoreEl = document.getElementById("riskScore");
+    const riskLevelEl = document.getElementById("riskLevel");
+    const escalationEl = document.getElementById("escalation");
+    const mvEl = document.getElementById("mv");
+    const mvReasonEl = document.getElementById("mvReason");
+    const runEl = document.getElementById("run");
+    const errEl = document.getElementById("err");
+    const flagCounter = document.getElementById("flagCounter");
+    const lastReason = document.getElementById("lastReason");
+    const frameEl = document.getElementById("camFrame");
+
+    function setPill(el, text, mode) {
+      el.textContent = text;
+      el.className = `pill ${mode}`;
+    }
+
+    function fmt(v) {
+      if (v === null || v === undefined) return "-";
+      const n = Number(v);
+      if (Number.isNaN(n)) return "-";
+      return n.toFixed(3);
+    }
+
+    function pickMode(ok, warn = false) {
+      if (ok) return "ok";
+      return warn ? "warn" : "err";
+    }
+
+    async function startMonitoring(userId) {
+      const resp = await fetch("/api/monitor/start", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user_id: userId }),
+      });
+      const data = await resp.json();
+      if (!resp.ok || !data.ok) {
+        throw new Error(data.message || data.error || "Unable to start monitoring");
+      }
+    }
+
+    async function pollState() {
+      const resp = await fetch("/api/monitor/state");
+      const s = await resp.json();
+
+      userIdEl.textContent = s.user_id || "-";
+      facesEl.textContent = String(s.faces ?? 0);
+      setPill(audioEl, s.audio_present ? "ON" : "OFF", s.audio_present ? "ok" : "warn");
+
+      const lipBad = ["AUDIO_ONLY", "WEAK_SYNC", "NO_FACE", "MULTIPLE_FACES"].includes(s.lip_sync_status);
+      setPill(lipEl, s.lip_sync_status || "IDLE", lipBad ? "err" : "ok");
+
+      const speakerOk = s.speaker_decision === "MATCH";
+      const speakerWarn = s.speaker_decision === "NO_SPEECH";
+      setPill(spkEl, s.speaker_decision || "UNKNOWN", speakerOk ? "ok" : (speakerWarn ? "warn" : "err"));
+      const simBar = Math.max(0, Math.min(100, Math.round(100 * Number(s.speaker_similarity_bar || 0))));
+      simBarEl.style.width = `${simBar}%`;
+
+      simEl.textContent = fmt(s.speaker_similarity);
+      thrEl.textContent = fmt(s.speaker_threshold);
+      driftEl.textContent = fmt(s.voice_drift);
+      const st = s.voice_stability || "Stable";
+      setPill(stabilityEl, st, st === "Stable" ? "ok" : (st === "Drifting" ? "warn" : "err"));
+      const vs = s.verification_state || "YELLOW";
+      setPill(vstateEl, vs === "GREEN" ? "🟢 Verified" : (vs === "YELLOW" ? "🟡 Voice drifting" : "🔴 Different speaker"), vs === "GREEN" ? "ok" : (vs === "YELLOW" ? "warn" : "err"));
+
+      pitchEl.textContent = s.pitch_hz ? `${Number(s.pitch_hz).toFixed(2)} Hz` : "-";
+      if (s.pitch_min_hz !== null && s.pitch_max_hz !== null && s.pitch_min_hz !== undefined && s.pitch_max_hz !== undefined) {
+        pitchRangeEl.textContent = `${Number(s.pitch_min_hz).toFixed(2)} - ${Number(s.pitch_max_hz).toFixed(2)} Hz`;
+      } else {
+        pitchRangeEl.textContent = "-";
+      }
+
+      if (s.pitch_match === true && s.frequency_match === true) {
+        setPill(pfMatchEl, "MATCH", "ok");
+      } else if (s.pitch_match === false || s.frequency_match === false) {
+        setPill(pfMatchEl, "MISMATCH", "err");
+      } else {
+        setPill(pfMatchEl, "UNKNOWN", "warn");
+      }
+      setPill(activeSpkEl, s.active_speaker_status || "UNKNOWN", (s.active_speaker_status === "BOUND") ? "ok" : "err");
+      const fc = s.face_count_status || "UNKNOWN";
+      setPill(faceCountStateEl, fc, fc === "SINGLE_FACE" ? "ok" : "err");
+      spkCountEl.textContent = `${s.speaker_count ?? 1} (${fmt(s.speaker_count_confidence)})`;
+
+      syncScoreEl.textContent = fmt(s.audio_sync_score);
+      syncFlagsEl.textContent = (s.audio_sync_flags && s.audio_sync_flags.length) ? s.audio_sync_flags.join(", ") : "NONE";
+      verifyScoreEl.textContent = fmt(s.verify_score);
+      riskScoreEl.textContent = String(s.risk_score ?? 0);
+      const rl = s.risk_level || "NORMAL";
+      setPill(riskLevelEl, rl, rl === "NORMAL" ? "ok" : (rl === "WARNING" ? "warn" : "err"));
+      const esc = s.escalation_level || "NORMAL";
+      setPill(escalationEl, `${esc} (${s.anomaly_streak ?? 0})`, esc === "NORMAL" ? "ok" : (esc === "WARNING" ? "warn" : "err"));
+      setPill(mvEl, s.multiple_voice_suspected ? "YES" : "NO", s.multiple_voice_suspected ? "err" : "ok");
+      mvReasonEl.textContent = s.multiple_voice_reason || "-";
+
+      setPill(runEl, s.running ? "RUNNING" : "STOPPED", s.running ? "ok" : "err");
+      errEl.textContent = s.error || "-";
+
+      flagCounter.textContent = `Flags: ${s.flags || 0}`;
+      lastReason.textContent = `Last flag: ${s.last_flag_reason || "none"}`;
+    }
+
+    async function boot() {
+      const params = new URLSearchParams(window.location.search);
+      const userId = (params.get("user_id") || "").trim();
+      if (!userId) {
+        throw new Error("Missing user_id in URL");
+      }
+
+      await startMonitoring(userId);
+      frameEl.src = "/api/monitor/stream";
+      await pollState();
+      setInterval(pollState, 700);
+    }
+
+    boot().catch((e) => {
+      errEl.textContent = e.message;
+      setPill(runEl, "ERROR", "err");
+    });
+
+    window.addEventListener("beforeunload", () => {
+      navigator.sendBeacon("/api/monitor/stop", new Blob(["{}"], { type: "application/json" }));
+    });
+  </script>
+</body>
+</html>

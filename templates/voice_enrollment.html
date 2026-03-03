@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Voice Enrollment</title>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --card: #161b22;
+      --panel: #1f2630;
+      --text: #e6edf3;
+      --muted: #9aa4b2;
+      --ok: #2ea043;
+      --warn: #d29922;
+      --err: #f85149;
+      --accent: #58a6ff;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Tahoma, sans-serif;
+      background: radial-gradient(circle at top, #1b2735 0%, var(--bg) 45%);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .screen {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 320px;
+      gap: 20px;
+    }
+    .main, .status {
+      background: var(--card);
+      border: 1px solid #2d333b;
+      border-radius: 16px;
+      padding: 18px;
+    }
+    .top {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 12px;
+    }
+    .instruction {
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+    .question {
+      font-size: 28px;
+      line-height: 1.25;
+      font-weight: 700;
+      margin: 8px 0 14px;
+      min-height: 76px;
+    }
+    .video-wrap {
+      position: relative;
+      border-radius: 14px;
+      overflow: hidden;
+      border: 1px solid #2d333b;
+      background: #000;
+      aspect-ratio: 16 / 9;
+    }
+    video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transform: scaleX(-1);
+    }
+    .controls {
+      margin-top: 14px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    button {
+      border: 0;
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      color: #fff;
+    }
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .start { background: #238636; }
+    .stop { background: #da3633; }
+    .re { background: #8957e5; }
+    .next { background: #1f6feb; }
+    .wave {
+      margin-top: 10px;
+      width: 100%;
+      height: 90px;
+      border: 1px solid #2d333b;
+      border-radius: 10px;
+      background: #0b0f14;
+    }
+    .error {
+      margin-top: 10px;
+      color: #ffb4af;
+      font-weight: 700;
+      min-height: 22px;
+    }
+    .status h3 {
+      margin-top: 0;
+      margin-bottom: 10px;
+    }
+    .item {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px;
+      border-radius: 10px;
+      background: var(--panel);
+      margin-bottom: 8px;
+    }
+    .pill {
+      font-weight: 700;
+      font-size: 12px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: #30363d;
+    }
+    .ok { background: rgba(46,160,67,0.22); color: #7ee787; }
+    .warn { background: rgba(210,153,34,0.22); color: #f2cc60; }
+    .err { background: rgba(248,81,73,0.22); color: #ff7b72; }
+    .done {
+      display: none;
+      text-align: center;
+      padding: 50px 20px;
+    }
+    .done h2 { font-size: 34px; margin-bottom: 10px; }
+    .score { color: var(--accent); font-size: 22px; font-weight: 700; margin: 8px 0; }
+    @media (max-width: 900px) {
+      .screen { grid-template-columns: 1fr; }
+      .question { font-size: 24px; }
+    }
+  </style>
+</head>
+<body>
+  <div id="enrollmentScreen" class="screen">
+    <section class="main">
+      <div class="top" id="progress">Question 1 of 10</div>
+      <div class="instruction">Please read the following question aloud clearly.</div>
+      <div class="question" id="questionText">Loading...</div>
+      <div class="video-wrap"><video id="cam" autoplay muted playsinline></video></div>
+      <canvas id="wave" class="wave" width="900" height="90"></canvas>
+      <div class="controls">
+        <button id="startBtn" class="start">&#127908; Start Recording</button>
+        <button id="stopBtn" class="stop" disabled>&#9209; Stop</button>
+        <button id="rerecordBtn" class="re" disabled>&#128260; Re-record</button>
+        <button id="nextBtn" class="next" disabled>Next Question</button>
+      </div>
+      <div class="error" id="errorBox"></div>
+    </section>
+
+    <aside class="status">
+      <h3>Live Status</h3>
+      <div class="item"><span>Mic Permission</span><span id="micStatus" class="pill warn">Pending</span></div>
+      <div class="item"><span>VAD</span><span id="vadStatus" class="pill warn">Silent</span></div>
+      <div class="item"><span>Face Check</span><span id="faceStatus" class="pill warn">Checking</span></div>
+      <div class="item"><span>Active Speaker</span><span id="speakerStatus" class="pill warn">No</span></div>
+      <div class="item"><span>Lip Sync</span><span id="lipStatus" class="pill warn">Checking</span></div>
+      <div class="item"><span>Audio Input</span><span id="audioStatus" class="pill warn">None</span></div>
+    </aside>
+  </div>
+
+  <section id="doneScreen" class="done">
+    <h2>Voice enrollment completed successfully</h2>
+    <div id="qualityScore" class="score"></div>
+    <div id="confidence" class="score"></div>
+    <p>Re-enrollment is disabled unless admin resets your profile.</p>
+  </section>
+
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js"></script>
+  <script>
+    const TOTAL_QUESTIONS = 10;
+    const MAX_DURATION_MS = 15000;
+    const SILENCE_TIMEOUT_MS = 1800;
+    const VAD_THRESHOLD = 0.02;
+
+    const progressEl = document.getElementById("progress");
+    const questionTextEl = document.getElementById("questionText");
+    const errorBox = document.getElementById("errorBox");
+    const startBtn = document.getElementById("startBtn");
+    const stopBtn = document.getElementById("stopBtn");
+    const rerecordBtn = document.getElementById("rerecordBtn");
+    const nextBtn = document.getElementById("nextBtn");
+    const videoEl = document.getElementById("cam");
+    const waveCanvas = document.getElementById("wave");
+    const waveCtx = waveCanvas.getContext("2d");
+
+    const micStatus = document.getElementById("micStatus");
+    const vadStatus = document.getElementById("vadStatus");
+    const faceStatus = document.getElementById("faceStatus");
+    const speakerStatus = document.getElementById("speakerStatus");
+    const lipStatus = document.getElementById("lipStatus");
+    const audioStatus = document.getElementById("audioStatus");
+
+    const enrollmentScreen = document.getElementById("enrollmentScreen");
+    const doneScreen = document.getElementById("doneScreen");
+    const qualityScoreEl = document.getElementById("qualityScore");
+    const confidenceEl = document.getElementById("confidence");
+
+    let userId = "";
+    let questions = [];
+    let currentIndex = 0;
+    let rerecordUsed = false;
+
+    let stream;
+    let audioCtx;
+    let analyser;
+    let sourceNode;
+    let processor;
+    let recording = false;
+    let pcmChunks = [];
+    let sampleRate = 16000;
+    let maxTimer;
+    let silenceSince = null;
+
+    let speakingDetected = false;
+    let audioDetected = false;
+    let faceCount = 0;
+    let mouthMovementDetected = false;
+    let prevMouthOpen = null;
+
+    let faceMesh;
+
+    function setPill(el, text, mode) {
+      el.textContent = text;
+      el.className = `pill ${mode}`;
+    }
+
+    function showError(msg) {
+      errorBox.textContent = msg || "";
+    }
+
+    function setQuestion() {
+      const q = questions[currentIndex];
+      progressEl.textContent = `Question ${currentIndex + 1} of ${questions.length}`;
+      questionTextEl.textContent = q.text;
+      showError("");
+      rerecordUsed = false;
+      startBtn.disabled = false;
+      stopBtn.disabled = true;
+      rerecordBtn.disabled = true;
+      nextBtn.disabled = true;
+      resetValidationFlags();
+    }
+
+    function resetValidationFlags() {
+      speakingDetected = false;
+      audioDetected = false;
+      mouthMovementDetected = false;
+      prevMouthOpen = null;
+      setPill(vadStatus, "Silent", "warn");
+      setPill(speakerStatus, "No", "warn");
+      setPill(audioStatus, "None", "warn");
+      setPill(lipStatus, "Checking", "warn");
+    }
+
+    async function init() {
+      userId = prompt("Enter User ID") || "";
+      userId = userId.trim();
+      if (!userId) {
+        showError("User ID is required.");
+        startBtn.disabled = true;
+        return;
+      }
+
+      const qResp = await fetch(`/api/enrollment/questions?user_id=${encodeURIComponent(userId)}`);
+      const qData = await qResp.json();
+      if (qData.locked) {
+        showDone({ voice_quality_score: "N/A", enrollment_confidence: "N/A" }, true);
+        return;
+      }
+
+      questions = qData.questions || [];
+      if (questions.length !== TOTAL_QUESTIONS) {
+        showError("Server must return exactly 10 enrollment questions.");
+        startBtn.disabled = true;
+        return;
+      }
+
+      await initMedia();
+      setQuestion();
+    }
+
+    async function initMedia() {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: true });
+        videoEl.srcObject = stream;
+        setPill(micStatus, "Granted", "ok");
+      } catch (err) {
+        setPill(micStatus, "Denied", "err");
+        showError("Mic/camera permission denied.");
+        startBtn.disabled = true;
+        return;
+      }
+
+      const tracks = stream.getAudioTracks();
+      if (!tracks.length) {
+        setPill(micStatus, "No Mic", "err");
+        startBtn.disabled = true;
+        showError("No audio input detected.");
+        return;
+      }
+
+      audioCtx = new AudioContext({ sampleRate: 16000 });
+      sampleRate = audioCtx.sampleRate;
+      sourceNode = audioCtx.createMediaStreamSource(stream);
+      analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 2048;
+      sourceNode.connect(analyser);
+
+      processor = audioCtx.createScriptProcessor(1024, 1, 1);
+      sourceNode.connect(processor);
+      processor.connect(audioCtx.destination);
+      processor.onaudioprocess = onAudioProcess;
+
+      initFaceMesh();
+      drawWave();
+      startFaceLoop();
+    }
+
+    function initFaceMesh() {
+      faceMesh = new FaceMesh({
+        locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`,
+      });
+      faceMesh.setOptions({
+        maxNumFaces: 2,
+        refineLandmarks: true,
+        minDetectionConfidence: 0.5,
+        minTrackingConfidence: 0.5,
+      });
+      faceMesh.onResults((results) => {
+        const faces = results.multiFaceLandmarks || [];
+        faceCount = faces.length;
+        if (faceCount === 1) {
+          setPill(faceStatus, "1 Face", "ok");
+          const lm = faces[0];
+          const upper = lm[13];
+          const lower = lm[14];
+          const mouthOpen = Math.abs(upper.y - lower.y);
+          if (prevMouthOpen !== null && Math.abs(mouthOpen - prevMouthOpen) > 0.004) {
+            mouthMovementDetected = true;
+          }
+          prevMouthOpen = mouthOpen;
+        } else if (faceCount === 0) {
+          setPill(faceStatus, "No Face", "err");
+        } else {
+          setPill(faceStatus, "Multiple", "err");
+        }
+      });
+    }
+
+    async function startFaceLoop() {
+      const offscreen = document.createElement("canvas");
+      const ctx = offscreen.getContext("2d");
+
+      while (true) {
+        if (videoEl.videoWidth > 0 && videoEl.videoHeight > 0) {
+          offscreen.width = videoEl.videoWidth;
+          offscreen.height = videoEl.videoHeight;
+          ctx.drawImage(videoEl, 0, 0, offscreen.width, offscreen.height);
+          await faceMesh.send({ image: offscreen });
+        }
+        await new Promise((r) => setTimeout(r, 200));
+      }
+    }
+
+    function onAudioProcess(e) {
+      if (!recording) return;
+      const input = e.inputBuffer.getChannelData(0);
+      pcmChunks.push(new Float32Array(input));
+
+      let rms = 0;
+      for (let i = 0; i < input.length; i++) rms += input[i] * input[i];
+      rms = Math.sqrt(rms / input.length);
+
+      if (rms > 0.005) {
+        audioDetected = true;
+        setPill(audioStatus, "Present", "ok");
+      }
+
+      if (rms > VAD_THRESHOLD) {
+        speakingDetected = true;
+        silenceSince = null;
+        setPill(vadStatus, "Speaking", "ok");
+        setPill(speakerStatus, "Yes", "ok");
+      } else {
+        setPill(vadStatus, "Silent", "warn");
+        if (silenceSince === null) silenceSince = Date.now();
+        if (Date.now() - silenceSince > SILENCE_TIMEOUT_MS) {
+          stopRecording(true);
+        }
+      }
+
+      if (speakingDetected && mouthMovementDetected) {
+        setPill(lipStatus, "Valid", "ok");
+      } else if (speakingDetected && !mouthMovementDetected) {
+        setPill(lipStatus, "Invalid", "err");
+      }
+    }
+
+    function drawWave() {
+      const data = new Uint8Array(analyser.fftSize);
+      const render = () => {
+        requestAnimationFrame(render);
+        if (!analyser) return;
+        analyser.getByteTimeDomainData(data);
+        waveCtx.fillStyle = "#0b0f14";
+        waveCtx.fillRect(0, 0, waveCanvas.width, waveCanvas.height);
+        waveCtx.lineWidth = 2;
+        waveCtx.strokeStyle = "#58a6ff";
+        waveCtx.beginPath();
+        const slice = waveCanvas.width / data.length;
+        let x = 0;
+        for (let i = 0; i < data.length; i++) {
+          const y = (data[i] / 255) * waveCanvas.height;
+          if (i === 0) waveCtx.moveTo(x, y); else waveCtx.lineTo(x, y);
+          x += slice;
+        }
+        waveCtx.lineTo(waveCanvas.width, waveCanvas.height / 2);
+        waveCtx.stroke();
+      };
+      render();
+    }
+
+    function startRecording() {
+      if (recording) return;
+      showError("");
+      resetValidationFlags();
+      recording = true;
+      pcmChunks = [];
+      silenceSince = null;
+
+      startBtn.disabled = true;
+      stopBtn.disabled = false;
+      nextBtn.disabled = true;
+      rerecordBtn.disabled = true;
+
+      maxTimer = setTimeout(() => stopRecording(true), MAX_DURATION_MS);
+    }
+
+    async function stopRecording(auto = false) {
+      if (!recording) return;
+      recording = false;
+      clearTimeout(maxTimer);
+      stopBtn.disabled = true;
+
+      const validationError = getValidationError();
+      if (validationError) {
+        showError(validationError);
+        if (!rerecordUsed) {
+          rerecordBtn.disabled = false;
+          startBtn.disabled = true;
+        } else {
+          startBtn.disabled = true;
+          rerecordBtn.disabled = true;
+          showError(`${validationError} Re-record limit reached for this question.`);
+        }
+        nextBtn.disabled = true;
+        return;
+      }
+
+      const wavBlob = pcmToWavBlob(pcmChunks, sampleRate);
+      const q = questions[currentIndex];
+      const timestamp = new Date().toISOString();
+      const form = new FormData();
+      form.append("user_id", userId);
+      form.append("question_id", q.question_id);
+      form.append("timestamp", timestamp);
+      form.append("validation", JSON.stringify({
+        face_count: faceCount,
+        active_speaker: speakingDetected,
+        lip_sync_valid: speakingDetected && mouthMovementDetected,
+        audio_present: audioDetected,
+        auto_stop: auto,
+      }));
+      form.append("audio", wavBlob, `${q.question_id}.wav`);
+
+      const resp = await fetch("/api/enrollment/recording", { method: "POST", body: form });
+      const result = await resp.json();
+
+      if (!resp.ok) {
+        showError(result.error || "Failed to upload recording.");
+        if (!rerecordUsed) rerecordBtn.disabled = false;
+        return;
+      }
+
+      showError("");
+      nextBtn.disabled = false;
+      if (!rerecordUsed) rerecordBtn.disabled = false;
+    }
+
+    function getValidationError() {
+      if (faceCount === 0) return "No face detected";
+      if (faceCount > 1) return "Multiple faces detected";
+      if (!audioDetected) return "No audio input detected";
+      if (!speakingDetected) return "Active speaker not detected";
+      if (!mouthMovementDetected) return "Mouth not moving while speaking";
+      return "";
+    }
+
+    function pcmToWavBlob(chunks, rate) {
+      const length = chunks.reduce((sum, chunk) => sum + chunk.length, 0);
+      const buffer = new Float32Array(length);
+      let offset = 0;
+      for (const chunk of chunks) {
+        buffer.set(chunk, offset);
+        offset += chunk.length;
+      }
+
+      const bytes = new ArrayBuffer(44 + buffer.length * 2);
+      const view = new DataView(bytes);
+      writeString(view, 0, "RIFF");
+      view.setUint32(4, 36 + buffer.length * 2, true);
+      writeString(view, 8, "WAVE");
+      writeString(view, 12, "fmt ");
+      view.setUint32(16, 16, true);
+      view.setUint16(20, 1, true);
+      view.setUint16(22, 1, true);
+      view.setUint32(24, rate, true);
+      view.setUint32(28, rate * 2, true);
+      view.setUint16(32, 2, true);
+      view.setUint16(34, 16, true);
+      writeString(view, 36, "data");
+      view.setUint32(40, buffer.length * 2, true);
+
+      let pos = 44;
+      for (let i = 0; i < buffer.length; i++, pos += 2) {
+        const s = Math.max(-1, Math.min(1, buffer[i]));
+        view.setInt16(pos, s < 0 ? s * 0x8000 : s * 0x7fff, true);
+      }
+
+      return new Blob([view], { type: "audio/wav" });
+    }
+
+    function writeString(view, offset, text) {
+      for (let i = 0; i < text.length; i++) {
+        view.setUint8(offset + i, text.charCodeAt(i));
+      }
+    }
+
+    async function nextQuestion() {
+      if (currentIndex < questions.length - 1) {
+        currentIndex += 1;
+        setQuestion();
+        return;
+      }
+
+      const resp = await fetch("/api/enrollment/complete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user_id: userId }),
+      });
+      const data = await resp.json();
+      if (!resp.ok) {
+        showError(data.error || "Unable to complete enrollment.");
+        return;
+      }
+      showDone(data, false);
+    }
+
+    function showDone(data, alreadyComplete) {
+      enrollmentScreen.style.display = "none";
+      doneScreen.style.display = "block";
+      if (alreadyComplete) {
+        qualityScoreEl.textContent = "Voice quality score: Already enrolled";
+        confidenceEl.textContent = "Enrollment confidence: Locked";
+        setTimeout(() => {
+          window.location.href = `/monitor?user_id=${encodeURIComponent(userId)}`;
+        }, 1200);
+      } else {
+        qualityScoreEl.textContent = `Voice quality score: ${data.voice_quality_score}`;
+        confidenceEl.textContent = `Enrollment confidence: ${data.enrollment_confidence}%`;
+        if (data.monitor_url) {
+          setTimeout(() => {
+            window.location.href = data.monitor_url;
+          }, 1200);
+        }
+      }
+    }
+
+    startBtn.addEventListener("click", startRecording);
+    stopBtn.addEventListener("click", () => stopRecording(false));
+    rerecordBtn.addEventListener("click", () => {
+      if (rerecordUsed) return;
+      rerecordUsed = true;
+      startBtn.disabled = false;
+      rerecordBtn.disabled = true;
+      nextBtn.disabled = true;
+      showError("Re-record attempt in progress.");
+    });
+    nextBtn.addEventListener("click", nextQuestion);
+
+    init().catch((err) => {
+      showError(`Initialization failed: ${err.message}`);
+      startBtn.disabled = true;
+    });
+  </script>
+</body>
+</html>

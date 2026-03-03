@@ -6,5 +6,7 @@ pandas==2.2.3
 pyyaml==6.0.2
 pyannote.audio==3.3.2; python_version < "3.13"
 sounddevice>=0.5.5
+librosa>=0.10.2.post1
 pytest==8.4.1
 coverage==7.9.1
+Flask>=3.0.0,<4

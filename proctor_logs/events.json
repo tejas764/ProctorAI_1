@@ -1,0 +1,1603 @@
+{
+  "generated_at": "2026-03-03T06:41:58.289703+00:00",
+  "risk_score": 973,
+  "risk_level": "CHEATING_LIKELY",
+  "events": [
+    {
+      "timestamp_s": 1772519875.4189622,
+      "reason": "VOICE_POLICY_WARNING",
+      "risk_delta": 2,
+      "risk_total": 2,
+      "frame_path": "proctor_logs\\frames\\1772519875418_voice_policy_warning.jpg",
+      "audio_path": "proctor_logs\\audio\\1772519875418_voice_policy_warning.wav",
+      "details": {
+        "reason": "low_fused_confidence",
+        "streak": 2
+      }
+    },
+    {
+      "timestamp_s": 1772519876.4309027,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 10,
+      "frame_path": "proctor_logs\\frames\\1772519876430_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772519876430_cheating_alert.wav",
+      "details": {
+        "reason": "low_fused_confidence",
+        "streak": 3
+      }
+    },
+    {
+      "timestamp_s": 1772519877.5045023,
+      "reason": "VOICE_POLICY_WARNING",
+      "risk_delta": 2,
+      "risk_total": 12,
+      "frame_path": "proctor_logs\\frames\\1772519877504_voice_policy_warning.jpg",
+      "audio_path": "proctor_logs\\audio\\1772519877504_voice_policy_warning.wav",
+      "details": {
+        "reason": "verified",
+        "streak": 2
+      }
+    },
+    {
+      "timestamp_s": 1772519878.4469461,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 20,
+      "frame_path": "proctor_logs\\frames\\1772519878446_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772519878446_cheating_alert.wav",
+      "details": {
+        "reason": "low_fused_confidence",
+        "streak": 3
+      }
+    },
+    {
+      "timestamp_s": 1772519880.5213807,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 28,
+      "frame_path": "proctor_logs\\frames\\1772519880521_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772519880521_cheating_alert.wav",
+      "details": {
+        "reason": "low_fused_confidence",
+        "streak": 5
+      }
+    },
+    {
+      "timestamp_s": 1772519882.647951,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 36,
+      "frame_path": "proctor_logs\\frames\\1772519882647_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772519882647_cheating_alert.wav",
+      "details": {
+        "reason": "low_fused_confidence",
+        "streak": 5
+      }
+    },
+    {
+      "timestamp_s": 1772519884.6674001,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 44,
+      "frame_path": "proctor_logs\\frames\\1772519884667_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772519884667_cheating_alert.wav",
+      "details": {
+        "reason": "low_fused_confidence",
+        "streak": 7
+      }
+    },
+    {
+      "timestamp_s": 1772519886.6921966,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 52,
+      "frame_path": "proctor_logs\\frames\\1772519886692_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772519886692_cheating_alert.wav",
+      "details": {
+        "reason": "low_fused_confidence",
+        "streak": 9
+      }
+    },
+    {
+      "timestamp_s": 1772519888.7132092,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 60,
+      "frame_path": "proctor_logs\\frames\\1772519888713_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772519888713_cheating_alert.wav",
+      "details": {
+        "reason": "low_fused_confidence",
+        "streak": 9
+      }
+    },
+    {
+      "timestamp_s": 1772519890.7609844,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 68,
+      "frame_path": "proctor_logs\\frames\\1772519890760_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772519890760_cheating_alert.wav",
+      "details": {
+        "reason": "low_fused_confidence",
+        "streak": 11
+      }
+    },
+    {
+      "timestamp_s": 1772519892.7960641,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 76,
+      "frame_path": "proctor_logs\\frames\\1772519892796_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772519892796_cheating_alert.wav",
+      "details": {
+        "reason": "low_fused_confidence",
+        "streak": 13
+      }
+    },
+    {
+      "timestamp_s": 1772519894.8924782,
+      "reason": "MULTIPLE_FACES",
+      "risk_delta": 5,
+      "risk_total": 81,
+      "frame_path": "proctor_logs\\frames\\1772519894892_multiple_faces.jpg",
+      "audio_path": "proctor_logs\\audio\\1772519894892_multiple_faces.wav",
+      "details": {
+        "reason": "multiple_speakers_detected",
+        "confidence": 0.9763368551976432
+      }
+    },
+    {
+      "timestamp_s": 1772519894.8984847,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 89,
+      "frame_path": "proctor_logs\\frames\\1772519894898_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772519894898_cheating_alert.wav",
+      "details": {
+        "reason": "multiple_speakers_detected",
+        "streak": 13
+      }
+    },
+    {
+      "timestamp_s": 1772519897.8650079,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 97,
+      "frame_path": "proctor_logs\\frames\\1772519897865_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772519897865_cheating_alert.wav",
+      "details": {
+        "reason": "low_fused_confidence",
+        "streak": 16
+      }
+    },
+    {
+      "timestamp_s": 1772519899.8695433,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 105,
+      "frame_path": "proctor_logs\\frames\\1772519899869_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772519899869_cheating_alert.wav",
+      "details": {
+        "reason": "low_fused_confidence",
+        "streak": 18
+      }
+    },
+    {
+      "timestamp_s": 1772519901.9929783,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 113,
+      "frame_path": "proctor_logs\\frames\\1772519901992_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772519901992_cheating_alert.wav",
+      "details": {
+        "reason": "verified",
+        "streak": 18
+      }
+    },
+    {
+      "timestamp_s": 1772519904.9534233,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 121,
+      "frame_path": "proctor_logs\\frames\\1772519904953_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772519904953_cheating_alert.wav",
+      "details": {
+        "reason": "low_fused_confidence",
+        "streak": 21
+      }
+    },
+    {
+      "timestamp_s": 1772519906.9993997,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 129,
+      "frame_path": "proctor_logs\\frames\\1772519906999_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772519906999_cheating_alert.wav",
+      "details": {
+        "reason": "low_fused_confidence",
+        "streak": 23
+      }
+    },
+    {
+      "timestamp_s": 1772519909.0225067,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 137,
+      "frame_path": "proctor_logs\\frames\\1772519909022_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772519909022_cheating_alert.wav",
+      "details": {
+        "reason": "low_fused_confidence",
+        "streak": 23
+      }
+    },
+    {
+      "timestamp_s": 1772519911.0309172,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 145,
+      "frame_path": "proctor_logs\\frames\\1772519911030_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772519911030_cheating_alert.wav",
+      "details": {
+        "reason": "low_fused_confidence",
+        "streak": 25
+      }
+    },
+    {
+      "timestamp_s": 1772519913.0633879,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 153,
+      "frame_path": "proctor_logs\\frames\\1772519913063_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772519913063_cheating_alert.wav",
+      "details": {
+        "reason": "low_fused_confidence",
+        "streak": 27
+      }
+    },
+    {
+      "timestamp_s": 1772519915.087307,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 161,
+      "frame_path": "proctor_logs\\frames\\1772519915087_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772519915087_cheating_alert.wav",
+      "details": {
+        "reason": "low_fused_confidence",
+        "streak": 29
+      }
+    },
+    {
+      "timestamp_s": 1772519916.0922158,
+      "reason": "LIPSYNC_VERIFICATION_FAIL",
+      "risk_delta": 4,
+      "risk_total": 165,
+      "frame_path": "proctor_logs\\frames\\1772519916092_lipsync_verification_fail.jpg",
+      "audio_path": "proctor_logs\\audio\\1772519916092_lipsync_verification_fail.wav",
+      "details": {
+        "score": 0.0
+      }
+    },
+    {
+      "timestamp_s": 1772519917.1242607,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 173,
+      "frame_path": "proctor_logs\\frames\\1772519917124_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772519917124_cheating_alert.wav",
+      "details": {
+        "reason": "low_fused_confidence",
+        "streak": 31
+      }
+    },
+    {
+      "timestamp_s": 1772519919.18975,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 181,
+      "frame_path": "proctor_logs\\frames\\1772519919189_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772519919189_cheating_alert.wav",
+      "details": {
+        "reason": "low_fused_confidence",
+        "streak": 33
+      }
+    },
+    {
+      "timestamp_s": 1772519921.2855644,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 189,
+      "frame_path": "proctor_logs\\frames\\1772519921285_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772519921285_cheating_alert.wav",
+      "details": {
+        "reason": "ownership_or_identity_violation",
+        "streak": 35
+      }
+    },
+    {
+      "timestamp_s": 1772519924.2492537,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 197,
+      "frame_path": "proctor_logs\\frames\\1772519924249_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772519924249_cheating_alert.wav",
+      "details": {
+        "reason": "low_fused_confidence",
+        "streak": 38
+      }
+    },
+    {
+      "timestamp_s": 1772519924.2558665,
+      "reason": "LIPSYNC_VERIFICATION_FAIL",
+      "risk_delta": 4,
+      "risk_total": 201,
+      "frame_path": "proctor_logs\\frames\\1772519924255_lipsync_verification_fail.jpg",
+      "audio_path": "proctor_logs\\audio\\1772519924255_lipsync_verification_fail.wav",
+      "details": {
+        "score": 0.0
+      }
+    },
+    {
+      "timestamp_s": 1772519926.330005,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 209,
+      "frame_path": "proctor_logs\\frames\\1772519926330_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772519926330_cheating_alert.wav",
+      "details": {
+        "reason": "verified",
+        "streak": 36
+      }
+    },
+    {
+      "timestamp_s": 1772519929.2927861,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 217,
+      "frame_path": "proctor_logs\\frames\\1772519929292_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772519929292_cheating_alert.wav",
+      "details": {
+        "reason": "low_fused_confidence",
+        "streak": 39
+      }
+    },
+    {
+      "timestamp_s": 1772519931.3341691,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 225,
+      "frame_path": "proctor_logs\\frames\\1772519931334_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772519931334_cheating_alert.wav",
+      "details": {
+        "reason": "low_fused_confidence",
+        "streak": 39
+      }
+    },
+    {
+      "timestamp_s": 1772519932.4579835,
+      "reason": "MULTIPLE_FACES",
+      "risk_delta": 5,
+      "risk_total": 230,
+      "frame_path": "proctor_logs\\frames\\1772519932457_multiple_faces.jpg",
+      "audio_path": "proctor_logs\\audio\\1772519932457_multiple_faces.wav",
+      "details": {
+        "reason": "multiple_speakers_detected",
+        "confidence": 1.0
+      }
+    },
+    {
+      "timestamp_s": 1772519933.3751519,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 238,
+      "frame_path": "proctor_logs\\frames\\1772519933375_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772519933375_cheating_alert.wav",
+      "details": {
+        "reason": "low_fused_confidence",
+        "streak": 41
+      }
+    },
+    {
+      "timestamp_s": 1772519935.4259882,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 246,
+      "frame_path": "proctor_logs\\frames\\1772519935425_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772519935425_cheating_alert.wav",
+      "details": {
+        "reason": "low_fused_confidence",
+        "streak": 43
+      }
+    },
+    {
+      "timestamp_s": 1772519937.5706058,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 254,
+      "frame_path": "proctor_logs\\frames\\1772519937570_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772519937570_cheating_alert.wav",
+      "details": {
+        "reason": "verified",
+        "streak": 43
+      }
+    },
+    {
+      "timestamp_s": 1772519940.5922601,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 262,
+      "frame_path": "proctor_logs\\frames\\1772519940592_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772519940592_cheating_alert.wav",
+      "details": {
+        "reason": "ownership_or_identity_violation",
+        "streak": 46
+      }
+    },
+    {
+      "timestamp_s": 1772519942.6640272,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 270,
+      "frame_path": "proctor_logs\\frames\\1772519942664_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772519942664_cheating_alert.wav",
+      "details": {
+        "reason": "ownership_or_identity_violation",
+        "streak": 48
+      }
+    },
+    {
+      "timestamp_s": 1772519944.7462604,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 278,
+      "frame_path": "proctor_logs\\frames\\1772519944746_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772519944746_cheating_alert.wav",
+      "details": {
+        "reason": "low_fused_confidence",
+        "streak": 50
+      }
+    },
+    {
+      "timestamp_s": 1772519946.8529909,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 286,
+      "frame_path": "proctor_logs\\frames\\1772519946852_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772519946852_cheating_alert.wav",
+      "details": {
+        "reason": "verified",
+        "streak": 48
+      }
+    },
+    {
+      "timestamp_s": 1772519949.856269,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 294,
+      "frame_path": "proctor_logs\\frames\\1772519949856_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772519949856_cheating_alert.wav",
+      "details": {
+        "reason": "ownership_or_identity_violation",
+        "streak": 51
+      }
+    },
+    {
+      "timestamp_s": 1772519951.8836827,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 302,
+      "frame_path": "proctor_logs\\frames\\1772519951883_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772519951883_cheating_alert.wav",
+      "details": {
+        "reason": "ownership_or_identity_violation",
+        "streak": 53
+      }
+    },
+    {
+      "timestamp_s": 1772519953.9495282,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 310,
+      "frame_path": "proctor_logs\\frames\\1772519953949_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772519953949_cheating_alert.wav",
+      "details": {
+        "reason": "low_fused_confidence",
+        "streak": 55
+      }
+    },
+    {
+      "timestamp_s": 1772519954.9533212,
+      "reason": "LIPSYNC_VERIFICATION_FAIL",
+      "risk_delta": 4,
+      "risk_total": 314,
+      "frame_path": "proctor_logs\\frames\\1772519954953_lipsync_verification_fail.jpg",
+      "audio_path": "proctor_logs\\audio\\1772519954953_lipsync_verification_fail.wav",
+      "details": {
+        "score": 0.0
+      }
+    },
+    {
+      "timestamp_s": 1772519955.9819698,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 322,
+      "frame_path": "proctor_logs\\frames\\1772519955981_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772519955981_cheating_alert.wav",
+      "details": {
+        "reason": "low_fused_confidence",
+        "streak": 57
+      }
+    },
+    {
+      "timestamp_s": 1772519957.9974108,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 330,
+      "frame_path": "proctor_logs\\frames\\1772519957997_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772519957997_cheating_alert.wav",
+      "details": {
+        "reason": "low_fused_confidence",
+        "streak": 59
+      }
+    },
+    {
+      "timestamp_s": 1772519960.0497115,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 338,
+      "frame_path": "proctor_logs\\frames\\1772519960049_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772519960049_cheating_alert.wav",
+      "details": {
+        "reason": "ownership_or_identity_violation",
+        "streak": 61
+      }
+    },
+    {
+      "timestamp_s": 1772519962.104795,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 346,
+      "frame_path": "proctor_logs\\frames\\1772519962104_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772519962104_cheating_alert.wav",
+      "details": {
+        "reason": "low_fused_confidence",
+        "streak": 63
+      }
+    },
+    {
+      "timestamp_s": 1772519964.19709,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 354,
+      "frame_path": "proctor_logs\\frames\\1772519964197_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772519964197_cheating_alert.wav",
+      "details": {
+        "reason": "verified",
+        "streak": 61
+      }
+    },
+    {
+      "timestamp_s": 1772519967.1941717,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 362,
+      "frame_path": "proctor_logs\\frames\\1772519967194_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772519967194_cheating_alert.wav",
+      "details": {
+        "reason": "ownership_or_identity_violation",
+        "streak": 64
+      }
+    },
+    {
+      "timestamp_s": 1772519969.1994872,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 370,
+      "frame_path": "proctor_logs\\frames\\1772519969199_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772519969199_cheating_alert.wav",
+      "details": {
+        "reason": "ownership_or_identity_violation",
+        "streak": 66
+      }
+    },
+    {
+      "timestamp_s": 1772519971.3330033,
+      "reason": "MULTIPLE_FACES",
+      "risk_delta": 5,
+      "risk_total": 375,
+      "frame_path": "proctor_logs\\frames\\1772519971333_multiple_faces.jpg",
+      "audio_path": "proctor_logs\\audio\\1772519971333_multiple_faces.wav",
+      "details": {
+        "reason": "multiple_speakers_detected",
+        "confidence": 1.0
+      }
+    },
+    {
+      "timestamp_s": 1772519971.3390203,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 383,
+      "frame_path": "proctor_logs\\frames\\1772519971339_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772519971339_cheating_alert.wav",
+      "details": {
+        "reason": "multiple_speakers_detected",
+        "streak": 68
+      }
+    },
+    {
+      "timestamp_s": 1772519972.3752408,
+      "reason": "LIPSYNC_VERIFICATION_FAIL",
+      "risk_delta": 4,
+      "risk_total": 387,
+      "frame_path": "proctor_logs\\frames\\1772519972375_lipsync_verification_fail.jpg",
+      "audio_path": "proctor_logs\\audio\\1772519972375_lipsync_verification_fail.wav",
+      "details": {
+        "score": 0.0
+      }
+    },
+    {
+      "timestamp_s": 1772519974.3947215,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 395,
+      "frame_path": "proctor_logs\\frames\\1772519974394_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772519974394_cheating_alert.wav",
+      "details": {
+        "reason": "ownership_or_identity_violation",
+        "streak": 71
+      }
+    },
+    {
+      "timestamp_s": 1772519975.4529097,
+      "reason": "MULTIPLE_FACES",
+      "risk_delta": 5,
+      "risk_total": 400,
+      "frame_path": "proctor_logs\\frames\\1772519975452_multiple_faces.jpg",
+      "audio_path": "proctor_logs\\audio\\1772519975452_multiple_faces.wav",
+      "details": {
+        "reason": "multiple_speakers_detected",
+        "confidence": 0.9391777952931941
+      }
+    },
+    {
+      "timestamp_s": 1772519977.3866916,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 408,
+      "frame_path": "proctor_logs\\frames\\1772519977386_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772519977386_cheating_alert.wav",
+      "details": {
+        "reason": "low_fused_confidence",
+        "streak": 74
+      }
+    },
+    {
+      "timestamp_s": 1772519979.4797392,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 416,
+      "frame_path": "proctor_logs\\frames\\1772519979479_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772519979479_cheating_alert.wav",
+      "details": {
+        "reason": "verified",
+        "streak": 72
+      }
+    },
+    {
+      "timestamp_s": 1772519981.5181055,
+      "reason": "MULTIPLE_FACES",
+      "risk_delta": 5,
+      "risk_total": 421,
+      "frame_path": "proctor_logs\\frames\\1772519981518_multiple_faces.jpg",
+      "audio_path": "proctor_logs\\audio\\1772519981518_multiple_faces.wav",
+      "details": {
+        "reason": "multiple_speakers_detected",
+        "confidence": 0.9460492435301854
+      }
+    },
+    {
+      "timestamp_s": 1772519981.5242772,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 429,
+      "frame_path": "proctor_logs\\frames\\1772519981524_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772519981524_cheating_alert.wav",
+      "details": {
+        "reason": "multiple_speakers_detected",
+        "streak": 74
+      }
+    },
+    {
+      "timestamp_s": 1772519984.5629935,
+      "reason": "MULTIPLE_FACES",
+      "risk_delta": 5,
+      "risk_total": 434,
+      "frame_path": "proctor_logs\\frames\\1772519984562_multiple_faces.jpg",
+      "audio_path": "proctor_logs\\audio\\1772519984562_multiple_faces.wav",
+      "details": {
+        "reason": "multiple_speakers_detected",
+        "confidence": 0.9467410906458128
+      }
+    },
+    {
+      "timestamp_s": 1772519984.5692046,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 442,
+      "frame_path": "proctor_logs\\frames\\1772519984569_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772519984569_cheating_alert.wav",
+      "details": {
+        "reason": "multiple_speakers_detected",
+        "streak": 77
+      }
+    },
+    {
+      "timestamp_s": 1772519987.5808935,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 450,
+      "frame_path": "proctor_logs\\frames\\1772519987580_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772519987580_cheating_alert.wav",
+      "details": {
+        "reason": "low_fused_confidence",
+        "streak": 80
+      }
+    },
+    {
+      "timestamp_s": 1772519987.5873547,
+      "reason": "LIPSYNC_VERIFICATION_FAIL",
+      "risk_delta": 4,
+      "risk_total": 454,
+      "frame_path": "proctor_logs\\frames\\1772519987587_lipsync_verification_fail.jpg",
+      "audio_path": "proctor_logs\\audio\\1772519987587_lipsync_verification_fail.wav",
+      "details": {
+        "score": 0.0
+      }
+    },
+    {
+      "timestamp_s": 1772519989.64146,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 462,
+      "frame_path": "proctor_logs\\frames\\1772519989641_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772519989641_cheating_alert.wav",
+      "details": {
+        "reason": "low_fused_confidence",
+        "streak": 82
+      }
+    },
+    {
+      "timestamp_s": 1772519991.7758226,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 470,
+      "frame_path": "proctor_logs\\frames\\1772519991775_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772519991775_cheating_alert.wav",
+      "details": {
+        "reason": "verified",
+        "streak": 80
+      }
+    },
+    {
+      "timestamp_s": 1772519994.8709254,
+      "reason": "MULTIPLE_FACES",
+      "risk_delta": 5,
+      "risk_total": 475,
+      "frame_path": "proctor_logs\\frames\\1772519994870_multiple_faces.jpg",
+      "audio_path": "proctor_logs\\audio\\1772519994870_multiple_faces.wav",
+      "details": {
+        "reason": "multiple_speakers_detected",
+        "confidence": 0.9901337241892119
+      }
+    },
+    {
+      "timestamp_s": 1772519994.8764825,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 483,
+      "frame_path": "proctor_logs\\frames\\1772519994876_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772519994876_cheating_alert.wav",
+      "details": {
+        "reason": "multiple_speakers_detected",
+        "streak": 83
+      }
+    },
+    {
+      "timestamp_s": 1772519996.9272053,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 491,
+      "frame_path": "proctor_logs\\frames\\1772519996927_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772519996927_cheating_alert.wav",
+      "details": {
+        "reason": "ownership_or_identity_violation",
+        "streak": 83
+      }
+    },
+    {
+      "timestamp_s": 1772519998.9970658,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 499,
+      "frame_path": "proctor_logs\\frames\\1772519998997_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772519998997_cheating_alert.wav",
+      "details": {
+        "reason": "verified",
+        "streak": 83
+      }
+    },
+    {
+      "timestamp_s": 1772520001.9607902,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 507,
+      "frame_path": "proctor_logs\\frames\\1772520001960_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772520001960_cheating_alert.wav",
+      "details": {
+        "reason": "ownership_or_identity_violation",
+        "streak": 86
+      }
+    },
+    {
+      "timestamp_s": 1772520004.0090153,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 515,
+      "frame_path": "proctor_logs\\frames\\1772520004009_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772520004009_cheating_alert.wav",
+      "details": {
+        "reason": "ownership_or_identity_violation",
+        "streak": 88
+      }
+    },
+    {
+      "timestamp_s": 1772520006.0273867,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 523,
+      "frame_path": "proctor_logs\\frames\\1772520006027_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772520006027_cheating_alert.wav",
+      "details": {
+        "reason": "low_fused_confidence",
+        "streak": 90
+      }
+    },
+    {
+      "timestamp_s": 1772520007.111193,
+      "reason": "LIPSYNC_VERIFICATION_FAIL",
+      "risk_delta": 4,
+      "risk_total": 527,
+      "frame_path": "proctor_logs\\frames\\1772520007111_lipsync_verification_fail.jpg",
+      "audio_path": "proctor_logs\\audio\\1772520007111_lipsync_verification_fail.wav",
+      "details": {
+        "score": 0.0
+      }
+    },
+    {
+      "timestamp_s": 1772520008.1546664,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 535,
+      "frame_path": "proctor_logs\\frames\\1772520008154_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772520008154_cheating_alert.wav",
+      "details": {
+        "reason": "verified",
+        "streak": 90
+      }
+    },
+    {
+      "timestamp_s": 1772520011.2284567,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 543,
+      "frame_path": "proctor_logs\\frames\\1772520011228_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772520011228_cheating_alert.wav",
+      "details": {
+        "reason": "verified",
+        "streak": 89
+      }
+    },
+    {
+      "timestamp_s": 1772520014.323432,
+      "reason": "MULTIPLE_FACES",
+      "risk_delta": 5,
+      "risk_total": 548,
+      "frame_path": "proctor_logs\\frames\\1772520014323_multiple_faces.jpg",
+      "audio_path": "proctor_logs\\audio\\1772520014323_multiple_faces.wav",
+      "details": {
+        "reason": "multiple_speakers_detected",
+        "confidence": 1.0
+      }
+    },
+    {
+      "timestamp_s": 1772520014.3310435,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 556,
+      "frame_path": "proctor_logs\\frames\\1772520014331_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772520014331_cheating_alert.wav",
+      "details": {
+        "reason": "multiple_speakers_detected",
+        "streak": 92
+      }
+    },
+    {
+      "timestamp_s": 1772520016.4045026,
+      "reason": "MULTIPLE_FACES",
+      "risk_delta": 5,
+      "risk_total": 561,
+      "frame_path": "proctor_logs\\frames\\1772520016404_multiple_faces.jpg",
+      "audio_path": "proctor_logs\\audio\\1772520016404_multiple_faces.wav",
+      "details": {
+        "reason": "multiple_speakers_detected",
+        "confidence": 0.9534962243782548
+      }
+    },
+    {
+      "timestamp_s": 1772520016.4098399,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 569,
+      "frame_path": "proctor_logs\\frames\\1772520016409_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772520016409_cheating_alert.wav",
+      "details": {
+        "reason": "multiple_speakers_detected",
+        "streak": 92
+      }
+    },
+    {
+      "timestamp_s": 1772520019.4010174,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 577,
+      "frame_path": "proctor_logs\\frames\\1772520019401_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772520019401_cheating_alert.wav",
+      "details": {
+        "reason": "ownership_or_identity_violation",
+        "streak": 95
+      }
+    },
+    {
+      "timestamp_s": 1772520021.4663713,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 585,
+      "frame_path": "proctor_logs\\frames\\1772520021466_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772520021466_cheating_alert.wav",
+      "details": {
+        "reason": "low_fused_confidence",
+        "streak": 97
+      }
+    },
+    {
+      "timestamp_s": 1772520023.4845283,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 593,
+      "frame_path": "proctor_logs\\frames\\1772520023484_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772520023484_cheating_alert.wav",
+      "details": {
+        "reason": "low_fused_confidence",
+        "streak": 99
+      }
+    },
+    {
+      "timestamp_s": 1772520023.4902692,
+      "reason": "LIPSYNC_VERIFICATION_FAIL",
+      "risk_delta": 4,
+      "risk_total": 597,
+      "frame_path": "proctor_logs\\frames\\1772520023490_lipsync_verification_fail.jpg",
+      "audio_path": "proctor_logs\\audio\\1772520023490_lipsync_verification_fail.wav",
+      "details": {
+        "score": 0.0
+      }
+    },
+    {
+      "timestamp_s": 1772520025.551691,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 605,
+      "frame_path": "proctor_logs\\frames\\1772520025551_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772520025551_cheating_alert.wav",
+      "details": {
+        "reason": "ownership_or_identity_violation",
+        "streak": 101
+      }
+    },
+    {
+      "timestamp_s": 1772520027.5639455,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 613,
+      "frame_path": "proctor_logs\\frames\\1772520027563_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772520027563_cheating_alert.wav",
+      "details": {
+        "reason": "ownership_or_identity_violation",
+        "streak": 103
+      }
+    },
+    {
+      "timestamp_s": 1772520029.6749625,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 621,
+      "frame_path": "proctor_logs\\frames\\1772520029674_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772520029674_cheating_alert.wav",
+      "details": {
+        "reason": "low_fused_confidence",
+        "streak": 105
+      }
+    },
+    {
+      "timestamp_s": 1772520031.694944,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 629,
+      "frame_path": "proctor_logs\\frames\\1772520031694_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772520031694_cheating_alert.wav",
+      "details": {
+        "reason": "low_fused_confidence",
+        "streak": 107
+      }
+    },
+    {
+      "timestamp_s": 1772520031.7009692,
+      "reason": "LIPSYNC_VERIFICATION_FAIL",
+      "risk_delta": 4,
+      "risk_total": 633,
+      "frame_path": "proctor_logs\\frames\\1772520031700_lipsync_verification_fail.jpg",
+      "audio_path": "proctor_logs\\audio\\1772520031700_lipsync_verification_fail.wav",
+      "details": {
+        "score": 0.0
+      }
+    },
+    {
+      "timestamp_s": 1772520033.8216202,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 641,
+      "frame_path": "proctor_logs\\frames\\1772520033821_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772520033821_cheating_alert.wav",
+      "details": {
+        "reason": "low_fused_confidence",
+        "streak": 109
+      }
+    },
+    {
+      "timestamp_s": 1772520035.9285872,
+      "reason": "MULTIPLE_FACES",
+      "risk_delta": 5,
+      "risk_total": 646,
+      "frame_path": "proctor_logs\\frames\\1772520035928_multiple_faces.jpg",
+      "audio_path": "proctor_logs\\audio\\1772520035928_multiple_faces.wav",
+      "details": {
+        "reason": "multiple_speakers_detected",
+        "confidence": 1.0
+      }
+    },
+    {
+      "timestamp_s": 1772520035.9346395,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 654,
+      "frame_path": "proctor_logs\\frames\\1772520035934_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772520035934_cheating_alert.wav",
+      "details": {
+        "reason": "multiple_speakers_detected",
+        "streak": 111
+      }
+    },
+    {
+      "timestamp_s": 1772520037.9827223,
+      "reason": "MULTIPLE_FACES",
+      "risk_delta": 5,
+      "risk_total": 659,
+      "frame_path": "proctor_logs\\frames\\1772520037982_multiple_faces.jpg",
+      "audio_path": "proctor_logs\\audio\\1772520037982_multiple_faces.wav",
+      "details": {
+        "reason": "multiple_speakers_detected",
+        "confidence": 0.9446046003036428
+      }
+    },
+    {
+      "timestamp_s": 1772520037.9884167,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 667,
+      "frame_path": "proctor_logs\\frames\\1772520037988_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772520037988_cheating_alert.wav",
+      "details": {
+        "reason": "multiple_speakers_detected",
+        "streak": 113
+      }
+    },
+    {
+      "timestamp_s": 1772520040.0544944,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 675,
+      "frame_path": "proctor_logs\\frames\\1772520040054_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772520040054_cheating_alert.wav",
+      "details": {
+        "reason": "ownership_or_identity_violation",
+        "streak": 115
+      }
+    },
+    {
+      "timestamp_s": 1772520040.0602267,
+      "reason": "LIPSYNC_VERIFICATION_FAIL",
+      "risk_delta": 4,
+      "risk_total": 679,
+      "frame_path": "proctor_logs\\frames\\1772520040060_lipsync_verification_fail.jpg",
+      "audio_path": "proctor_logs\\audio\\1772520040060_lipsync_verification_fail.wav",
+      "details": {
+        "score": 0.0
+      }
+    },
+    {
+      "timestamp_s": 1772520041.0618827,
+      "reason": "MULTIPLE_FACES",
+      "risk_delta": 5,
+      "risk_total": 684,
+      "frame_path": "proctor_logs\\frames\\1772520041061_multiple_faces.jpg",
+      "audio_path": "proctor_logs\\audio\\1772520041061_multiple_faces.wav",
+      "details": {
+        "reason": "multiple_speakers_detected",
+        "confidence": 1.0
+      }
+    },
+    {
+      "timestamp_s": 1772520042.0764582,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 692,
+      "frame_path": "proctor_logs\\frames\\1772520042076_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772520042076_cheating_alert.wav",
+      "details": {
+        "reason": "ownership_or_identity_violation",
+        "streak": 117
+      }
+    },
+    {
+      "timestamp_s": 1772520044.0983953,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 700,
+      "frame_path": "proctor_logs\\frames\\1772520044098_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772520044098_cheating_alert.wav",
+      "details": {
+        "reason": "verified",
+        "streak": 117
+      }
+    },
+    {
+      "timestamp_s": 1772520045.1333818,
+      "reason": "MULTIPLE_FACES",
+      "risk_delta": 5,
+      "risk_total": 705,
+      "frame_path": "proctor_logs\\frames\\1772520045133_multiple_faces.jpg",
+      "audio_path": "proctor_logs\\audio\\1772520045133_multiple_faces.wav",
+      "details": {
+        "reason": "multiple_speakers_detected",
+        "confidence": 0.9425060942725277
+      }
+    },
+    {
+      "timestamp_s": 1772520046.1793368,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 713,
+      "frame_path": "proctor_logs\\frames\\1772520046179_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772520046179_cheating_alert.wav",
+      "details": {
+        "reason": "verified",
+        "streak": 117
+      }
+    },
+    {
+      "timestamp_s": 1772520049.1345825,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 721,
+      "frame_path": "proctor_logs\\frames\\1772520049134_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772520049134_cheating_alert.wav",
+      "details": {
+        "reason": "low_fused_confidence",
+        "streak": 120
+      }
+    },
+    {
+      "timestamp_s": 1772520051.2217927,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 729,
+      "frame_path": "proctor_logs\\frames\\1772520051221_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772520051221_cheating_alert.wav",
+      "details": {
+        "reason": "verified",
+        "streak": 118
+      }
+    },
+    {
+      "timestamp_s": 1772520053.2456324,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 737,
+      "frame_path": "proctor_logs\\frames\\1772520053245_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772520053245_cheating_alert.wav",
+      "details": {
+        "reason": "verified",
+        "streak": 118
+      }
+    },
+    {
+      "timestamp_s": 1772520056.3349843,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 745,
+      "frame_path": "proctor_logs\\frames\\1772520056334_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772520056334_cheating_alert.wav",
+      "details": {
+        "reason": "ownership_or_identity_violation",
+        "streak": 119
+      }
+    },
+    {
+      "timestamp_s": 1772520059.3739867,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 753,
+      "frame_path": "proctor_logs\\frames\\1772520059373_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772520059373_cheating_alert.wav",
+      "details": {
+        "reason": "verified",
+        "streak": 120
+      }
+    },
+    {
+      "timestamp_s": 1772520062.3340335,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 761,
+      "frame_path": "proctor_logs\\frames\\1772520062334_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772520062334_cheating_alert.wav",
+      "details": {
+        "reason": "low_fused_confidence",
+        "streak": 121
+      }
+    },
+    {
+      "timestamp_s": 1772520064.3638039,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 769,
+      "frame_path": "proctor_logs\\frames\\1772520064363_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772520064363_cheating_alert.wav",
+      "details": {
+        "reason": "low_fused_confidence",
+        "streak": 123
+      }
+    },
+    {
+      "timestamp_s": 1772520066.401985,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 777,
+      "frame_path": "proctor_logs\\frames\\1772520066401_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772520066401_cheating_alert.wav",
+      "details": {
+        "reason": "low_fused_confidence",
+        "streak": 125
+      }
+    },
+    {
+      "timestamp_s": 1772520068.4956877,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 785,
+      "frame_path": "proctor_logs\\frames\\1772520068495_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772520068495_cheating_alert.wav",
+      "details": {
+        "reason": "ownership_or_identity_violation",
+        "streak": 127
+      }
+    },
+    {
+      "timestamp_s": 1772520068.501439,
+      "reason": "LIPSYNC_VERIFICATION_FAIL",
+      "risk_delta": 4,
+      "risk_total": 789,
+      "frame_path": "proctor_logs\\frames\\1772520068501_lipsync_verification_fail.jpg",
+      "audio_path": "proctor_logs\\audio\\1772520068501_lipsync_verification_fail.wav",
+      "details": {
+        "score": 0.0
+      }
+    },
+    {
+      "timestamp_s": 1772520070.5330946,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 797,
+      "frame_path": "proctor_logs\\frames\\1772520070533_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772520070533_cheating_alert.wav",
+      "details": {
+        "reason": "voice_drifting",
+        "streak": 127
+      }
+    },
+    {
+      "timestamp_s": 1772520072.5991282,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 805,
+      "frame_path": "proctor_logs\\frames\\1772520072599_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772520072599_cheating_alert.wav",
+      "details": {
+        "reason": "verified",
+        "streak": 127
+      }
+    },
+    {
+      "timestamp_s": 1772520074.646655,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 813,
+      "frame_path": "proctor_logs\\frames\\1772520074646_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772520074646_cheating_alert.wav",
+      "details": {
+        "reason": "voice_drifting",
+        "streak": 125
+      }
+    },
+    {
+      "timestamp_s": 1772520077.6138253,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 821,
+      "frame_path": "proctor_logs\\frames\\1772520077613_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772520077613_cheating_alert.wav",
+      "details": {
+        "reason": "low_fused_confidence",
+        "streak": 128
+      }
+    },
+    {
+      "timestamp_s": 1772520079.6397452,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 829,
+      "frame_path": "proctor_logs\\frames\\1772520079639_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772520079639_cheating_alert.wav",
+      "details": {
+        "reason": "ownership_or_identity_violation",
+        "streak": 130
+      }
+    },
+    {
+      "timestamp_s": 1772520081.7681243,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 837,
+      "frame_path": "proctor_logs\\frames\\1772520081768_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772520081768_cheating_alert.wav",
+      "details": {
+        "reason": "verified",
+        "streak": 128
+      }
+    },
+    {
+      "timestamp_s": 1772520084.7652674,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 845,
+      "frame_path": "proctor_logs\\frames\\1772520084765_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772520084765_cheating_alert.wav",
+      "details": {
+        "reason": "low_fused_confidence",
+        "streak": 131
+      }
+    },
+    {
+      "timestamp_s": 1772520086.8170664,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 853,
+      "frame_path": "proctor_logs\\frames\\1772520086817_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772520086817_cheating_alert.wav",
+      "details": {
+        "reason": "ownership_or_identity_violation",
+        "streak": 131
+      }
+    },
+    {
+      "timestamp_s": 1772520088.888622,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 861,
+      "frame_path": "proctor_logs\\frames\\1772520088888_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772520088888_cheating_alert.wav",
+      "details": {
+        "reason": "low_fused_confidence",
+        "streak": 133
+      }
+    },
+    {
+      "timestamp_s": 1772520090.9536853,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 869,
+      "frame_path": "proctor_logs\\frames\\1772520090953_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772520090953_cheating_alert.wav",
+      "details": {
+        "reason": "low_fused_confidence",
+        "streak": 135
+      }
+    },
+    {
+      "timestamp_s": 1772520093.061924,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 877,
+      "frame_path": "proctor_logs\\frames\\1772520093061_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772520093061_cheating_alert.wav",
+      "details": {
+        "reason": "verified",
+        "streak": 133
+      }
+    },
+    {
+      "timestamp_s": 1772520096.0599606,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 885,
+      "frame_path": "proctor_logs\\frames\\1772520096059_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772520096059_cheating_alert.wav",
+      "details": {
+        "reason": "low_fused_confidence",
+        "streak": 136
+      }
+    },
+    {
+      "timestamp_s": 1772520098.119986,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 893,
+      "frame_path": "proctor_logs\\frames\\1772520098119_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772520098119_cheating_alert.wav",
+      "details": {
+        "reason": "low_fused_confidence",
+        "streak": 138
+      }
+    },
+    {
+      "timestamp_s": 1772520100.1639,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 901,
+      "frame_path": "proctor_logs\\frames\\1772520100163_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772520100163_cheating_alert.wav",
+      "details": {
+        "reason": "low_fused_confidence",
+        "streak": 140
+      }
+    },
+    {
+      "timestamp_s": 1772520101.1937165,
+      "reason": "LIPSYNC_VERIFICATION_FAIL",
+      "risk_delta": 4,
+      "risk_total": 905,
+      "frame_path": "proctor_logs\\frames\\1772520101193_lipsync_verification_fail.jpg",
+      "audio_path": "proctor_logs\\audio\\1772520101193_lipsync_verification_fail.wav",
+      "details": {
+        "score": 0.0
+      }
+    },
+    {
+      "timestamp_s": 1772520102.202952,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 913,
+      "frame_path": "proctor_logs\\frames\\1772520102202_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772520102202_cheating_alert.wav",
+      "details": {
+        "reason": "low_fused_confidence",
+        "streak": 142
+      }
+    },
+    {
+      "timestamp_s": 1772520104.3317196,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 921,
+      "frame_path": "proctor_logs\\frames\\1772520104331_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772520104331_cheating_alert.wav",
+      "details": {
+        "reason": "verified",
+        "streak": 140
+      }
+    },
+    {
+      "timestamp_s": 1772520106.33677,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 929,
+      "frame_path": "proctor_logs\\frames\\1772520106336_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772520106336_cheating_alert.wav",
+      "details": {
+        "reason": "voice_drifting",
+        "streak": 138
+      }
+    },
+    {
+      "timestamp_s": 1772520108.3845947,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 937,
+      "frame_path": "proctor_logs\\frames\\1772520108384_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772520108384_cheating_alert.wav",
+      "details": {
+        "reason": "ownership_or_identity_violation",
+        "streak": 140
+      }
+    },
+    {
+      "timestamp_s": 1772520111.384015,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 945,
+      "frame_path": "proctor_logs\\frames\\1772520111384_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772520111384_cheating_alert.wav",
+      "details": {
+        "reason": "low_fused_confidence",
+        "streak": 143
+      }
+    },
+    {
+      "timestamp_s": 1772520113.4096024,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 953,
+      "frame_path": "proctor_logs\\frames\\1772520113409_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772520113409_cheating_alert.wav",
+      "details": {
+        "reason": "low_fused_confidence",
+        "streak": 145
+      }
+    },
+    {
+      "timestamp_s": 1772520114.4349105,
+      "reason": "LIPSYNC_VERIFICATION_FAIL",
+      "risk_delta": 4,
+      "risk_total": 957,
+      "frame_path": "proctor_logs\\frames\\1772520114434_lipsync_verification_fail.jpg",
+      "audio_path": "proctor_logs\\audio\\1772520114434_lipsync_verification_fail.wav",
+      "details": {
+        "score": 0.0
+      }
+    },
+    {
+      "timestamp_s": 1772520115.4400008,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 965,
+      "frame_path": "proctor_logs\\frames\\1772520115440_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772520115440_cheating_alert.wav",
+      "details": {
+        "reason": "low_fused_confidence",
+        "streak": 147
+      }
+    },
+    {
+      "timestamp_s": 1772520117.4695938,
+      "reason": "CHEATING_ALERT",
+      "risk_delta": 8,
+      "risk_total": 973,
+      "frame_path": "proctor_logs\\frames\\1772520117469_cheating_alert.jpg",
+      "audio_path": "proctor_logs\\audio\\1772520117469_cheating_alert.wav",
+      "details": {
+        "reason": "low_fused_confidence",
+        "streak": 149
+      }
+    }
+  ]
+}
