@@ -3,194 +3,381 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Live LipSync + Voice Monitor</title>
+  <title>ProctorGuard Unified Monitor</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet" />
   <style>
     :root {
-      --bg: #0d1117;
-      --card: #161b22;
-      --panel: #1f2630;
-      --text: #e6edf3;
-      --muted: #9aa4b2;
-      --ok: #2ea043;
-      --warn: #d29922;
-      --err: #f85149;
-      --accent: #58a6ff;
+      --bg: #f2f5f9;
+      --text: #142132;
+      --muted: #5f7085;
+      --surface: #ffffff;
+      --surface-2: #edf3f9;
+      --line: #d5dee9;
+      --accent: #006d77;
+      --ok: #0f9d58;
+      --warn: #d88907;
+      --err: #cf2f45;
+      --shadow: 0 10px 25px rgba(18, 36, 58, 0.08);
     }
+
     * { box-sizing: border-box; }
     body {
       margin: 0;
-      font-family: "Segoe UI", Tahoma, sans-serif;
-      background: radial-gradient(circle at top, #1b2735 0%, var(--bg) 45%);
+      font-family: "Manrope", "Segoe UI", sans-serif;
       color: var(--text);
+      background:
+        radial-gradient(1200px 500px at 0% -10%, #d6eef2 0%, transparent 65%),
+        radial-gradient(900px 500px at 100% -20%, #f5e9d0 0%, transparent 68%),
+        var(--bg);
       min-height: 100vh;
       padding: 20px;
     }
-    .screen {
-      max-width: 1200px;
+
+    .shell {
+      max-width: 1320px;
       margin: 0 auto;
       display: grid;
-      grid-template-columns: 1fr 320px;
-      gap: 20px;
-      position: relative;
+      gap: 16px;
     }
-    .flag {
-      position: fixed;
-      top: 14px;
-      right: 18px;
-      background: rgba(248,81,73,0.18);
-      border: 1px solid #f85149;
-      color: #ffd3d0;
-      border-radius: 999px;
-      padding: 8px 14px;
-      font-weight: 800;
-      z-index: 1000;
-    }
-    .main, .status {
-      background: var(--card);
-      border: 1px solid #2d333b;
+
+    .hidden { display: none !important; }
+
+    .calib {
+      background: var(--surface);
+      border: 1px solid var(--line);
       border-radius: 16px;
-      padding: 18px;
-    }
-    .title {
-      font-size: 20px;
-      font-weight: 800;
-      margin-bottom: 10px;
-    }
-    .video-wrap {
-      border-radius: 14px;
+      box-shadow: var(--shadow);
+      padding: 16px;
+      min-height: 72vh;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      gap: 14px;
+      position: relative;
       overflow: hidden;
-      border: 1px solid #2d333b;
-      background: #000;
-      aspect-ratio: 16 / 9;
     }
-    .video-frame {
+
+    .calib h1 {
+      margin: 0;
+      font-size: 1.1rem;
+      font-weight: 800;
+    }
+
+    .calib p {
+      margin: 4px 0 0;
+      color: var(--muted);
+    }
+
+    .calib-space {
+      border: 1px dashed var(--line);
+      border-radius: 12px;
+      background: linear-gradient(180deg, #f8fbff, #eef4fb);
+      position: relative;
+      min-height: 420px;
+    }
+
+    .target {
+      width: 26px;
+      height: 26px;
+      border-radius: 999px;
+      border: 2px solid #fff;
+      background: var(--accent);
+      box-shadow: 0 0 0 8px rgba(0, 109, 119, 0.16);
+      position: absolute;
+      transform: translate(-50%, -50%);
+      transition: left 0.25s ease, top 0.25s ease;
+      animation: pulse 1.3s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 8px rgba(0, 109, 119, 0.16); }
+      50% { box-shadow: 0 0 0 14px rgba(0, 109, 119, 0.08); }
+      100% { box-shadow: 0 0 0 8px rgba(0, 109, 119, 0.16); }
+    }
+
+    .calib-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .badge {
+      border-radius: 999px;
+      padding: 7px 12px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      border: 1px solid transparent;
+      background: var(--surface-2);
+      color: var(--text);
+      white-space: nowrap;
+    }
+
+    .btn {
+      border: 0;
+      border-radius: 10px;
+      padding: 8px 13px;
+      font-weight: 700;
+      background: var(--accent);
+      color: #fff;
+      cursor: pointer;
+    }
+
+    .topbar {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+      padding: 14px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .title {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .title h1 {
+      margin: 0;
+      font-size: 1.1rem;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+    }
+
+    .title p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .chips { display: flex; gap: 8px; flex-wrap: wrap; }
+
+    .layout {
+      display: grid;
+      gap: 16px;
+      grid-template-columns: 1.35fr 1fr;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+      padding: 14px;
+    }
+
+    .video-wrap {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #111;
+      overflow: hidden;
+      aspect-ratio: 16/9;
+    }
+
+    #camFrame {
       width: 100%;
       height: 100%;
       object-fit: cover;
       transform: scaleX(-1);
+      display: block;
     }
-    .sub {
+
+    .meta {
       margin-top: 10px;
-      color: var(--muted);
-      font-size: 14px;
-    }
-    .item {
-      display: flex;
-      justify-content: space-between;
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
       gap: 8px;
-      padding: 10px;
+    }
+
+    .meta .slot {
       border-radius: 10px;
-      background: var(--panel);
-      margin-bottom: 8px;
-      align-items: center;
+      background: var(--surface-2);
+      border: 1px solid var(--line);
+      padding: 8px 10px;
     }
-    .pill {
-      font-weight: 700;
-      font-size: 12px;
-      padding: 4px 8px;
-      border-radius: 999px;
-      background: #30363d;
+
+    .slot .k {
+      color: var(--muted);
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
     }
-    .ok { background: rgba(46,160,67,0.22); color: #7ee787; }
-    .warn { background: rgba(210,153,34,0.22); color: #f2cc60; }
-    .err { background: rgba(248,81,73,0.22); color: #ff7b72; }
-    .val { font-weight: 700; color: #d2e5ff; }
+
+    .slot .v {
+      font-weight: 800;
+      margin-top: 2px;
+      font-size: 0.95rem;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .stat {
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: var(--surface-2);
+      padding: 10px;
+      min-height: 72px;
+    }
+
+    .stat .k {
+      color: var(--muted);
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 5px;
+    }
+
+    .stat .v {
+      font-size: 0.95rem;
+      font-weight: 800;
+    }
+
     .meter {
-      width: 140px;
-      height: 10px;
+      margin-top: 6px;
+      height: 8px;
+      width: 100%;
       border-radius: 999px;
-      background: #0f141b;
-      border: 1px solid #2d333b;
+      border: 1px solid var(--line);
+      background: #fff;
       overflow: hidden;
     }
-    .meter-fill {
+
+    .fill {
       height: 100%;
-      width: 0%;
-      background: linear-gradient(90deg, #f85149, #d29922 55%, #2ea043);
+      width: 0;
       transition: width 0.2s linear;
+      background: linear-gradient(90deg, #e95c43, #f4b740 45%, #12a150);
     }
-    @media (max-width: 900px) {
-      .screen { grid-template-columns: 1fr; }
+
+    .ok { background: rgba(15, 157, 88, 0.14); border-color: rgba(15, 157, 88, 0.3); color: #0f7f47; }
+    .warn { background: rgba(216, 137, 7, 0.14); border-color: rgba(216, 137, 7, 0.3); color: #9b6303; }
+    .err { background: rgba(207, 47, 69, 0.14); border-color: rgba(207, 47, 69, 0.3); color: #a42336; }
+
+    @media (max-width: 980px) {
+      .layout { grid-template-columns: 1fr; }
+      .meta { grid-template-columns: 1fr; }
+      .grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
 <body>
-  <div class="flag" id="flagCounter">Flags: 0</div>
-
-  <div class="screen">
-    <section class="main">
-      <div class="title">Live LipSync + Voice Monitoring</div>
-      <div class="video-wrap"><img id="camFrame" class="video-frame" alt="Live monitor frame" /></div>
-      <div class="sub" id="lastReason">Last flag: none</div>
+  <div class="shell">
+    <section id="calibScreen" class="calib">
+      <div>
+        <h1>Eye Calibration</h1>
+        <p id="calibInstruction">Keep your face centered. Click Start and follow the moving point with your eyes only.</p>
+      </div>
+      <div id="calibSpace" class="calib-space">
+        <div id="target" class="target hidden"></div>
+      </div>
+      <div class="calib-footer">
+        <span id="calibStatus" class="badge warn">Waiting to start</span>
+        <div>
+          <button id="startCalibBtn" class="btn">Start Calibration</button>
+          <button id="skipCalibBtn" class="btn" style="background:#7d8da1;">Skip</button>
+        </div>
+      </div>
     </section>
 
-    <aside class="status">
-      <div class="item"><span>User ID</span><span id="userId" class="val">-</span></div>
-      <div class="item"><span>Faces</span><span id="faces" class="val">0</span></div>
-      <div class="item"><span>Audio</span><span id="audio" class="pill warn">OFF</span></div>
-      <div class="item"><span>Lip Sync</span><span id="lipsync" class="pill warn">IDLE</span></div>
-      <div class="item"><span>Speaker Match</span><span id="spk" class="pill warn">UNKNOWN</span></div>
-      <div class="item"><span>Similarity Bar</span><div class="meter"><div id="simBar" class="meter-fill"></div></div></div>
-      <div class="item"><span>Similarity</span><span id="sim" class="val">-</span></div>
-      <div class="item"><span>Threshold</span><span id="thr" class="val">-</span></div>
-      <div class="item"><span>Drift</span><span id="drift" class="val">-</span></div>
-      <div class="item"><span>Voice Stability</span><span id="stability" class="pill warn">Stable</span></div>
-      <div class="item"><span>Verification</span><span id="vstate" class="pill warn">YELLOW</span></div>
-      <div class="item"><span>Pitch (Hz)</span><span id="pitch" class="val">-</span></div>
-      <div class="item"><span>Pitch Range</span><span id="pitchRange" class="val">-</span></div>
-      <div class="item"><span>Pitch/Freq Match</span><span id="pfMatch" class="pill warn">UNKNOWN</span></div>
-      <div class="item"><span>Active Speaker</span><span id="activeSpk" class="pill warn">UNKNOWN</span></div>
-      <div class="item"><span>Face Count</span><span id="faceCountState" class="pill warn">UNKNOWN</span></div>
-      <div class="item"><span>Speaker Count</span><span id="spkCount" class="val">1</span></div>
-      <div class="item"><span>AudioSync Score</span><span id="syncScore" class="val">-</span></div>
-      <div class="item"><span>AudioSync Flags</span><span id="syncFlags" class="val">NONE</span></div>
-      <div class="item"><span>Verify Score</span><span id="verifyScore" class="val">-</span></div>
-      <div class="item"><span>Risk Score</span><span id="riskScore" class="val">0</span></div>
-      <div class="item"><span>Risk Level</span><span id="riskLevel" class="pill warn">NORMAL</span></div>
-      <div class="item"><span>Escalation</span><span id="escalation" class="pill warn">NORMAL</span></div>
-      <div class="item"><span>Multiple Voice</span><span id="mv" class="pill warn">NO</span></div>
-      <div class="item"><span>MV Reason</span><span id="mvReason" class="val">-</span></div>
-      <div class="item"><span>Monitor</span><span id="run" class="pill warn">STARTING</span></div>
-      <div class="item"><span>Error</span><span id="err" class="val">-</span></div>
-    </aside>
+    <section id="dashboard" class="hidden">
+      <header class="topbar">
+        <div class="title">
+          <h1>ProctorGuard Unified Monitor</h1>
+          <p>Lip-sync, speaker verification, and gaze detection running from one camera stream</p>
+        </div>
+        <div class="chips">
+          <span id="runChip" class="badge warn">MONITOR STARTING</span>
+          <span id="riskChip" class="badge warn">RISK NORMAL</span>
+          <span id="flagChip" class="badge warn">FLAGS 0</span>
+        </div>
+      </header>
+
+      <section class="layout">
+        <article class="card">
+          <div class="video-wrap">
+            <img id="camFrame" alt="Live monitor feed" />
+          </div>
+          <div class="meta">
+            <div class="slot"><div class="k">User</div><div id="userId" class="v">-</div></div>
+            <div class="slot"><div class="k">Last Flag</div><div id="lastReason" class="v">none</div></div>
+            <div class="slot"><div class="k">Flag Details</div><div id="lastDetails" class="v">-</div></div>
+            <div class="slot"><div class="k">Error</div><div id="err" class="v">-</div></div>
+          </div>
+        </article>
+
+        <article class="card">
+          <div class="grid">
+            <div class="stat"><div class="k">Faces</div><div id="faces" class="v">0</div></div>
+            <div class="stat"><div class="k">Audio</div><div id="audio" class="v">OFF</div></div>
+            <div class="stat"><div class="k">Lip Sync</div><div id="lipsync" class="v">IDLE</div></div>
+            <div class="stat"><div class="k">Gaze Status</div><div id="gazeStatus" class="v">DISABLED</div></div>
+            <div class="stat"><div class="k">Gaze Confidence</div><div id="gazeConf" class="v">0.000</div></div>
+            <div class="stat"><div class="k">Gaze Calibration</div><div id="gazeCal" class="v">0%</div><div class="meter"><div id="gazeBar" class="fill"></div></div></div>
+            <div class="stat"><div class="k">Speaker Decision</div><div id="spk" class="v">UNKNOWN</div></div>
+            <div class="stat"><div class="k">Speaker Similarity</div><div id="sim" class="v">-</div><div class="meter"><div id="simBar" class="fill"></div></div></div>
+            <div class="stat"><div class="k">Verification State</div><div id="vstate" class="v">YELLOW</div></div>
+            <div class="stat"><div class="k">Escalation</div><div id="escalation" class="v">NORMAL</div></div>
+            <div class="stat"><div class="k">Speaker Count</div><div id="spkCount" class="v">1</div></div>
+            <div class="stat"><div class="k">Risk Score</div><div id="riskScore" class="v">0</div></div>
+            <div class="stat"><div class="k">AudioSync Score</div><div id="syncScore" class="v">-</div></div>
+            <div class="stat"><div class="k">Verify Score</div><div id="verifyScore" class="v">-</div></div>
+            <div class="stat"><div class="k">Pitch (Hz)</div><div id="pitch" class="v">-</div></div>
+            <div class="stat"><div class="k">Pitch Match</div><div id="pfMatch" class="v">UNKNOWN</div></div>
+          </div>
+        </article>
+      </section>
+    </section>
   </div>
 
   <script>
+    const calibScreen = document.getElementById("calibScreen");
+    const dashboard = document.getElementById("dashboard");
+    const calibInstruction = document.getElementById("calibInstruction");
+    const calibStatus = document.getElementById("calibStatus");
+    const startCalibBtn = document.getElementById("startCalibBtn");
+    const skipCalibBtn = document.getElementById("skipCalibBtn");
+    const target = document.getElementById("target");
+
     const userIdEl = document.getElementById("userId");
     const facesEl = document.getElementById("faces");
     const audioEl = document.getElementById("audio");
     const lipEl = document.getElementById("lipsync");
+    const gazeStatusEl = document.getElementById("gazeStatus");
+    const gazeConfEl = document.getElementById("gazeConf");
+    const gazeCalEl = document.getElementById("gazeCal");
+    const gazeBarEl = document.getElementById("gazeBar");
     const spkEl = document.getElementById("spk");
-    const simBarEl = document.getElementById("simBar");
     const simEl = document.getElementById("sim");
-    const thrEl = document.getElementById("thr");
-    const driftEl = document.getElementById("drift");
-    const stabilityEl = document.getElementById("stability");
+    const simBarEl = document.getElementById("simBar");
     const vstateEl = document.getElementById("vstate");
-    const pitchEl = document.getElementById("pitch");
-    const pitchRangeEl = document.getElementById("pitchRange");
-    const pfMatchEl = document.getElementById("pfMatch");
-    const activeSpkEl = document.getElementById("activeSpk");
-    const faceCountStateEl = document.getElementById("faceCountState");
-    const spkCountEl = document.getElementById("spkCount");
-    const syncScoreEl = document.getElementById("syncScore");
-    const syncFlagsEl = document.getElementById("syncFlags");
-    const verifyScoreEl = document.getElementById("verifyScore");
-    const riskScoreEl = document.getElementById("riskScore");
-    const riskLevelEl = document.getElementById("riskLevel");
     const escalationEl = document.getElementById("escalation");
-    const mvEl = document.getElementById("mv");
-    const mvReasonEl = document.getElementById("mvReason");
-    const runEl = document.getElementById("run");
+    const spkCountEl = document.getElementById("spkCount");
+    const riskScoreEl = document.getElementById("riskScore");
+    const syncScoreEl = document.getElementById("syncScore");
+    const verifyScoreEl = document.getElementById("verifyScore");
+    const pitchEl = document.getElementById("pitch");
+    const pfMatchEl = document.getElementById("pfMatch");
     const errEl = document.getElementById("err");
-    const flagCounter = document.getElementById("flagCounter");
-    const lastReason = document.getElementById("lastReason");
+    const flagChip = document.getElementById("flagChip");
+    const runChip = document.getElementById("runChip");
+    const riskChip = document.getElementById("riskChip");
+    const lastReasonEl = document.getElementById("lastReason");
+    const lastDetailsEl = document.getElementById("lastDetails");
     const frameEl = document.getElementById("camFrame");
 
-    function setPill(el, text, mode) {
-      el.textContent = text;
-      el.className = `pill ${mode}`;
-    }
+    let latestState = {};
+    let pollTimer = null;
 
     function fmt(v) {
       if (v === null || v === undefined) return "-";
@@ -199,10 +386,9 @@
       return n.toFixed(3);
     }
 
-    function pickMode(ok, warn = false) {
-      if (ok) return "ok";
-      return warn ? "warn" : "err";
-    }
+    function styleBadge(el, mode) { el.className = `badge ${mode}`; }
+    function styleValue(el, mode) { el.className = `v ${mode}`; }
+    function sleep(ms) { return new Promise((r) => setTimeout(r, ms)); }
 
     async function startMonitoring(userId) {
       const resp = await fetch("/api/monitor/start", {
@@ -219,63 +405,132 @@
     async function pollState() {
       const resp = await fetch("/api/monitor/state");
       const s = await resp.json();
+      latestState = s;
 
       userIdEl.textContent = s.user_id || "-";
       facesEl.textContent = String(s.faces ?? 0);
-      setPill(audioEl, s.audio_present ? "ON" : "OFF", s.audio_present ? "ok" : "warn");
+      styleValue(facesEl, (s.faces ?? 0) === 1 ? "ok" : "warn");
+
+      audioEl.textContent = s.audio_present ? "ON" : "OFF";
+      styleValue(audioEl, s.audio_present ? "ok" : "warn");
 
       const lipBad = ["AUDIO_ONLY", "WEAK_SYNC", "NO_FACE", "MULTIPLE_FACES"].includes(s.lip_sync_status);
-      setPill(lipEl, s.lip_sync_status || "IDLE", lipBad ? "err" : "ok");
+      lipEl.textContent = s.lip_sync_status || "IDLE";
+      styleValue(lipEl, lipBad ? "err" : "ok");
 
+      gazeStatusEl.textContent = s.gaze_status || "DISABLED";
+      const gazeMode = s.gaze_status === "INSIDE" ? "ok" : (s.gaze_status === "OUTSIDE" || s.gaze_status === "ERROR" ? "err" : "warn");
+      styleValue(gazeStatusEl, gazeMode);
+      gazeConfEl.textContent = fmt(s.gaze_confidence);
+      styleValue(gazeConfEl, (Number(s.gaze_confidence || 0) >= 0.5) ? "ok" : "warn");
+      const gp = Math.round(100 * Number(s.gaze_progress || 0));
+      gazeCalEl.textContent = s.gaze_calibrated ? "Calibrated" : `${gp}%`;
+      styleValue(gazeCalEl, s.gaze_calibrated ? "ok" : "warn");
+      gazeBarEl.style.width = `${Math.max(0, Math.min(100, gp))}%`;
+
+      spkEl.textContent = s.speaker_decision || "UNKNOWN";
       const speakerOk = s.speaker_decision === "MATCH";
       const speakerWarn = s.speaker_decision === "NO_SPEECH";
-      setPill(spkEl, s.speaker_decision || "UNKNOWN", speakerOk ? "ok" : (speakerWarn ? "warn" : "err"));
-      const simBar = Math.max(0, Math.min(100, Math.round(100 * Number(s.speaker_similarity_bar || 0))));
-      simBarEl.style.width = `${simBar}%`;
+      styleValue(spkEl, speakerOk ? "ok" : (speakerWarn ? "warn" : "err"));
 
       simEl.textContent = fmt(s.speaker_similarity);
-      thrEl.textContent = fmt(s.speaker_threshold);
-      driftEl.textContent = fmt(s.voice_drift);
-      const st = s.voice_stability || "Stable";
-      setPill(stabilityEl, st, st === "Stable" ? "ok" : (st === "Drifting" ? "warn" : "err"));
+      const simBar = Math.max(0, Math.min(100, Math.round(100 * Number(s.speaker_similarity_bar || 0))));
+      simBarEl.style.width = `${simBar}%`;
+      styleValue(simEl, simBar > 60 ? "ok" : (simBar > 40 ? "warn" : "err"));
+
       const vs = s.verification_state || "YELLOW";
-      setPill(vstateEl, vs === "GREEN" ? "🟢 Verified" : (vs === "YELLOW" ? "🟡 Voice drifting" : "🔴 Different speaker"), vs === "GREEN" ? "ok" : (vs === "YELLOW" ? "warn" : "err"));
+      vstateEl.textContent = vs;
+      styleValue(vstateEl, vs === "GREEN" ? "ok" : (vs === "YELLOW" ? "warn" : "err"));
 
-      pitchEl.textContent = s.pitch_hz ? `${Number(s.pitch_hz).toFixed(2)} Hz` : "-";
-      if (s.pitch_min_hz !== null && s.pitch_max_hz !== null && s.pitch_min_hz !== undefined && s.pitch_max_hz !== undefined) {
-        pitchRangeEl.textContent = `${Number(s.pitch_min_hz).toFixed(2)} - ${Number(s.pitch_max_hz).toFixed(2)} Hz`;
-      } else {
-        pitchRangeEl.textContent = "-";
-      }
+      const esc = s.escalation_level || "NORMAL";
+      escalationEl.textContent = `${esc} (${s.anomaly_streak ?? 0})`;
+      styleValue(escalationEl, esc === "NORMAL" ? "ok" : (esc === "WARNING" ? "warn" : "err"));
 
-      if (s.pitch_match === true && s.frequency_match === true) {
-        setPill(pfMatchEl, "MATCH", "ok");
-      } else if (s.pitch_match === false || s.frequency_match === false) {
-        setPill(pfMatchEl, "MISMATCH", "err");
-      } else {
-        setPill(pfMatchEl, "UNKNOWN", "warn");
-      }
-      setPill(activeSpkEl, s.active_speaker_status || "UNKNOWN", (s.active_speaker_status === "BOUND") ? "ok" : "err");
-      const fc = s.face_count_status || "UNKNOWN";
-      setPill(faceCountStateEl, fc, fc === "SINGLE_FACE" ? "ok" : "err");
       spkCountEl.textContent = `${s.speaker_count ?? 1} (${fmt(s.speaker_count_confidence)})`;
+      styleValue(spkCountEl, (s.speaker_count ?? 1) > 1 ? "err" : "ok");
+
+      riskScoreEl.textContent = String(s.risk_score ?? 0);
+      styleValue(riskScoreEl, (Number(s.risk_score || 0) > 60) ? "err" : (Number(s.risk_score || 0) > 20 ? "warn" : "ok"));
 
       syncScoreEl.textContent = fmt(s.audio_sync_score);
-      syncFlagsEl.textContent = (s.audio_sync_flags && s.audio_sync_flags.length) ? s.audio_sync_flags.join(", ") : "NONE";
+      styleValue(syncScoreEl, (Number(s.audio_sync_score || 0) >= 0.45) ? "ok" : "warn");
+
       verifyScoreEl.textContent = fmt(s.verify_score);
-      riskScoreEl.textContent = String(s.risk_score ?? 0);
-      const rl = s.risk_level || "NORMAL";
-      setPill(riskLevelEl, rl, rl === "NORMAL" ? "ok" : (rl === "WARNING" ? "warn" : "err"));
-      const esc = s.escalation_level || "NORMAL";
-      setPill(escalationEl, `${esc} (${s.anomaly_streak ?? 0})`, esc === "NORMAL" ? "ok" : (esc === "WARNING" ? "warn" : "err"));
-      setPill(mvEl, s.multiple_voice_suspected ? "YES" : "NO", s.multiple_voice_suspected ? "err" : "ok");
-      mvReasonEl.textContent = s.multiple_voice_reason || "-";
+      styleValue(verifyScoreEl, s.verify_score === null || s.verify_score === undefined ? "warn" : "ok");
 
-      setPill(runEl, s.running ? "RUNNING" : "STOPPED", s.running ? "ok" : "err");
+      pitchEl.textContent = s.pitch_hz ? `${Number(s.pitch_hz).toFixed(2)} Hz` : "-";
+      styleValue(pitchEl, s.pitch_hz ? "ok" : "warn");
+
+      const pm = s.pitch_match;
+      const fm = s.frequency_match;
+      if (pm === true && fm === true) {
+        pfMatchEl.textContent = "MATCH";
+        styleValue(pfMatchEl, "ok");
+      } else if (pm === false || fm === false) {
+        pfMatchEl.textContent = "MISMATCH";
+        styleValue(pfMatchEl, "err");
+      } else {
+        pfMatchEl.textContent = "UNKNOWN";
+        styleValue(pfMatchEl, "warn");
+      }
+
+      const running = !!s.running;
+      runChip.textContent = running ? "MONITOR RUNNING" : "MONITOR STOPPED";
+      styleBadge(runChip, running ? "ok" : "err");
+
+      const risk = s.risk_level || "NORMAL";
+      riskChip.textContent = `RISK ${risk}`;
+      styleBadge(riskChip, risk === "NORMAL" ? "ok" : (risk === "WARNING" ? "warn" : "err"));
+
+      flagChip.textContent = `FLAGS ${s.flags || 0}`;
+      styleBadge(flagChip, (s.flags || 0) > 0 ? "warn" : "ok");
+
+      lastReasonEl.textContent = s.last_flag_reason || "none";
+      lastDetailsEl.textContent = s.last_flag_details || "-";
       errEl.textContent = s.error || "-";
+      styleValue(errEl, s.error ? "err" : "ok");
+    }
 
-      flagCounter.textContent = `Flags: ${s.flags || 0}`;
-      lastReason.textContent = `Last flag: ${s.last_flag_reason || "none"}`;
+    async function runCalibrationGuide() {
+      const targets = [
+        { name: "CENTER", x: 50, y: 50 },
+        { name: "LEFT EDGE", x: 10, y: 50 },
+        { name: "RIGHT EDGE", x: 90, y: 50 },
+        { name: "TOP EDGE", x: 50, y: 14 },
+        { name: "BOTTOM EDGE", x: 50, y: 86 },
+      ];
+
+      target.classList.remove("hidden");
+      calibStatus.textContent = "Calibration running";
+      styleBadge(calibStatus, "warn");
+      startCalibBtn.disabled = true;
+      skipCalibBtn.disabled = true;
+
+      for (const t of targets) {
+        target.style.left = `${t.x}%`;
+        target.style.top = `${t.y}%`;
+        calibInstruction.textContent = `Look at ${t.name}. Keep your head stable and move eyes only.`;
+        await sleep(1800);
+      }
+
+      calibInstruction.textContent = "Finishing calibration. Hold center for a moment.";
+      target.style.left = "50%";
+      target.style.top = "50%";
+
+      const waitStart = Date.now();
+      while (!latestState.gaze_calibrated && (Date.now() - waitStart) < 9000) {
+        const gp = Math.round(100 * Number(latestState.gaze_progress || 0));
+        calibStatus.textContent = `Backend calibration ${gp}%`;
+        await sleep(450);
+      }
+
+      const calibrated = !!latestState.gaze_calibrated;
+      calibStatus.textContent = calibrated ? "Calibration complete" : "Calibration completed with partial confidence";
+      styleBadge(calibStatus, calibrated ? "ok" : "warn");
+      await sleep(750);
+
+      calibScreen.classList.add("hidden");
+      dashboard.classList.remove("hidden");
     }
 
     async function boot() {
@@ -288,15 +543,23 @@
       await startMonitoring(userId);
       frameEl.src = "/api/monitor/stream";
       await pollState();
-      setInterval(pollState, 700);
+      pollTimer = setInterval(pollState, 650);
+
+      startCalibBtn.addEventListener("click", runCalibrationGuide, { once: true });
+      skipCalibBtn.addEventListener("click", () => {
+        calibScreen.classList.add("hidden");
+        dashboard.classList.remove("hidden");
+      }, { once: true });
     }
 
     boot().catch((e) => {
-      errEl.textContent = e.message;
-      setPill(runEl, "ERROR", "err");
+      calibInstruction.textContent = e.message;
+      calibStatus.textContent = "Startup error";
+      styleBadge(calibStatus, "err");
     });
 
     window.addEventListener("beforeunload", () => {
+      if (pollTimer) clearInterval(pollTimer);
       navigator.sendBeacon("/api/monitor/stop", new Blob(["{}"], { type: "application/json" }));
     });
   </script>

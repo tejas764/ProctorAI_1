@@ -10,3 +10,5 @@ librosa>=0.10.2.post1
 pytest==8.4.1
 coverage==7.9.1
 Flask>=3.0.0,<4
+openvino==2025.4.1
+pywin32>=306; platform_system == "Windows"

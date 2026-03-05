@@ -16,6 +16,7 @@ from speaker_verification import SpeakerVerificationResult, SpeakerVerifier
 from voice_biometric_store import VoiceBiometricStore
 from voice_features import extract_voice_features
 from web_modules.audio import AudioMonitor
+from web_modules.gaze_bridge import GazeEngine, GazeReading
 from web_modules.verification_logic import (
     DriftTracker,
     MultiSpeakerEstimate,
@@ -30,6 +31,37 @@ from chunks_modules.shared import create_face_mesh_backend
 
 def _utc_now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
+
+
+def _human_flag_detail(reason: str, details: dict[str, object] | None = None) -> str:
+    info = details or {}
+    if reason == "GAZE_OUTSIDE":
+        conf = info.get("gaze_confidence")
+        return f"Gaze moved outside calibrated screen region (confidence={conf})."
+    if reason == "VOICE_POLICY_WARNING":
+        why = str(info.get("reason", "voice anomaly"))
+        streak = info.get("streak")
+        return f"Voice policy warning: {why}. Anomaly streak={streak}."
+    if reason == "CHEATING_ALERT":
+        why = str(info.get("reason", "high-risk behavior"))
+        streak = info.get("streak")
+        return f"Escalated cheating alert: {why}. Anomaly streak={streak}."
+    if reason == "MULTIPLE_FACES":
+        why = str(info.get("reason", "multiple speakers/faces detected"))
+        conf = info.get("confidence")
+        return f"Multiple face/voice anomaly detected ({why}, confidence={conf})."
+    if reason == "LIPSYNC_VERIFICATION_FAIL":
+        score = info.get("score")
+        return f"Lip-sync verification failed on segment check (score={score})."
+    if reason == "AUDIO_ONLY":
+        return "Audio detected without corresponding face/lip activity."
+    if reason == "PHONEME_VISEME_MISMATCH":
+        return "Audio phoneme pattern did not match visible mouth movement."
+    if reason == "VOICE_MISMATCH":
+        return "Current speaker does not match enrolled voice profile."
+    if reason == "AUDIO_WITHOUT_LIP_MOTION":
+        return "Speech energy detected while mouth motion remained too low."
+    return reason.replace("_", " ").title()
 
 
 def compute_mar(face_landmarks: object) -> float:
@@ -96,6 +128,11 @@ class MonitoringWorker:
             "multiple_voice_reason": "",
             "speaker_count": 1,
             "speaker_count_confidence": 0.0,
+            "gaze_enabled": False,
+            "gaze_status": "DISABLED",
+            "gaze_confidence": 0.0,
+            "gaze_calibrated": False,
+            "gaze_progress": 0.0,
             "speaker_similarity_bar": 0.0,
             "voice_stability": "Stable",
             "active_speaker_status": "UNKNOWN",
@@ -104,6 +141,7 @@ class MonitoringWorker:
             "escalation_level": "NORMAL",
             "anomaly_streak": 0,
             "last_flag_reason": "",
+            "last_flag_details": "",
             "updated_at": _utc_now_iso(),
             "error": "",
         }
@@ -146,6 +184,7 @@ class MonitoringWorker:
         with self._lock:
             self._state["flags"] = int(self._state.get("flags", 0)) + 1
             self._state["last_flag_reason"] = reason
+            self._state["last_flag_details"] = _human_flag_detail(reason, details)
             self._state["risk_score"] = int(risk.risk_score)
             self._state["risk_level"] = risk.level()
             self._state["updated_at"] = _utc_now_iso()
@@ -173,6 +212,7 @@ class MonitoringWorker:
             flags=0,
             error="",
             last_flag_reason="",
+            last_flag_details="",
             risk_score=0,
             risk_level="NORMAL",
         )
@@ -212,6 +252,17 @@ class MonitoringWorker:
             face_mesh, _ = create_face_mesh_backend()
             face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_frontalface_default.xml")
             face_cascade_alt = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_frontalface_alt2.xml")
+            gaze_engine = GazeEngine()
+            gaze_ok, gaze_message = gaze_engine.start()
+            gaze_cache = GazeReading(
+                status="DISABLED" if not gaze_ok else "CALIBRATING",
+                confidence=0.0,
+                calibrated=False,
+                progress=0.0,
+                error="" if gaze_ok else gaze_message,
+            )
+            outside_gaze_streak = 0
+            frame_index = 0
             motion_series: deque[float] = deque(maxlen=120)
             audio_series: deque[float] = deque(maxlen=120)
             suspicious_streak = 0
@@ -220,6 +271,9 @@ class MonitoringWorker:
             last_face_count = -1
             last_verify_t = 0.0
             verify_interval_s = 1.0
+            min_voice_policy_rms = 0.012
+            min_reliable_pitch_hz = 70.0
+            max_reliable_pitch_hz = 420.0
             spk_cache = SpeakerVerificationResult(
                 similarity=None,
                 drift=None,
@@ -259,6 +313,7 @@ class MonitoringWorker:
                         continue
 
                     frame = cv2.flip(frame, 1)
+                    frame_index += 1
                     faces = []
                     num_faces = 0
                     if face_mesh is not None:
@@ -308,6 +363,35 @@ class MonitoringWorker:
                     motion_series.append(mar_delta)
                     audio_series.append(audio_rms)
 
+                    # Run gaze inference every other frame to reduce CPU load.
+                    if gaze_ok and (frame_index % 2 == 0):
+                        gaze_cache = gaze_engine.process(frame)
+                    elif not gaze_ok:
+                        gaze_cache = GazeReading(
+                            status="DISABLED",
+                            confidence=0.0,
+                            calibrated=False,
+                            progress=0.0,
+                            error=gaze_message,
+                        )
+
+                    if gaze_cache.status == "OUTSIDE":
+                        outside_gaze_streak += 1
+                    else:
+                        outside_gaze_streak = 0
+                    if outside_gaze_streak >= 2 and audio_present:
+                        self._flag_event(
+                            "GAZE_OUTSIDE",
+                            risk,
+                            frame,
+                            mic.latest_seconds(1.0),
+                            {
+                                "gaze_confidence": float(gaze_cache.confidence),
+                                "gaze_status": gaze_cache.status,
+                            },
+                        )
+                        outside_gaze_streak = 0
+
                     audio_chunk = mic.latest_seconds(0.35)
                     if face_mesh is not None and stable_faces == 1 and audio_present:
                         sync_res = audio_sync.update(
@@ -335,19 +419,29 @@ class MonitoringWorker:
                     if (now_t - last_verify_t) >= verify_interval_s:
                         # Overlapping sliding window verification.
                         window_audio = mic.latest_seconds(2.5)
+                        speech_window_active = bool(
+                            audio_present
+                            and window_audio.size >= int(self.sample_rate * 0.4)
+                            and audio_rms >= min_voice_policy_rms
+                        )
                         spk_cache = speaker.verify(audio=window_audio, audio_present=audio_present, timestamp_s=now_t)
                         spk = spk_cache
 
-                        if audio_present:
+                        if speech_window_active:
                             multi_cache = estimate_speaker_count(window_audio, self.sample_rate)
                         else:
                             multi_cache = MultiSpeakerEstimate(speaker_count=1, confidence=0.0, reason="no_speech")
 
-                        if audio_present and window_audio.size >= int(self.sample_rate * 0.4):
+                        if speech_window_active:
                             feats = extract_voice_features(window_audio, self.sample_rate)
                             pitch_hz = float(feats.pitch_mean)
-                            pitch_match = soft_pitch_match(pitch_hz, pitch_min_hz, pitch_max_hz)
-                            frequency_match = pitch_match
+                            if min_reliable_pitch_hz <= pitch_hz <= max_reliable_pitch_hz:
+                                pitch_match = soft_pitch_match(pitch_hz, pitch_min_hz, pitch_max_hz)
+                                frequency_match = pitch_match
+                            else:
+                                # Unreliable/unvoiced pitch windows should stay neutral.
+                                pitch_match = None
+                                frequency_match = None
                         else:
                             pitch_hz = None
                             pitch_match = None
@@ -368,17 +462,29 @@ class MonitoringWorker:
                         lip_sync_score = float(sync_res.score) if stable_faces == 1 else 0.4
                         active_prob = 1.0 if (audio_present and stable_faces == 1 and lip_sync_score >= 0.45) else 0.2
 
-                        decision_cache = fuse_window_decision(
-                            similarity_score=similarity_score,
-                            drift_score=drift_score,
-                            lip_sync_score=lip_sync_score,
-                            active_speaker_prob=active_prob,
-                            single_face=(stable_faces == 1),
-                            speaker_count=multi_cache.speaker_count,
-                            hard_mismatch=bool(spk.is_mismatch),
-                        )
+                        if speech_window_active:
+                            decision_cache = fuse_window_decision(
+                                similarity_score=similarity_score,
+                                drift_score=drift_score,
+                                lip_sync_score=lip_sync_score,
+                                active_speaker_prob=active_prob,
+                                single_face=(stable_faces == 1),
+                                speaker_count=multi_cache.speaker_count,
+                                hard_mismatch=bool(spk.is_mismatch),
+                            )
+                        else:
+                            decision_cache = WindowDecision(
+                                similarity_score=similarity_score,
+                                drift_score=drift_score,
+                                lip_sync_score=lip_sync_score,
+                                active_speaker_prob=active_prob,
+                                fused_score=0.5,
+                                state="YELLOW",
+                                anomaly=False,
+                                reason="no_speech_window",
+                            )
 
-                        if multi_cache.speaker_count > 1:
+                        if speech_window_active and multi_cache.speaker_count > 1:
                             self._flag_event(
                                 "MULTIPLE_FACES",
                                 risk,
@@ -387,11 +493,14 @@ class MonitoringWorker:
                                 {"reason": "multiple_speakers_detected", "confidence": multi_cache.confidence},
                             )
 
-                        anomaly_streak = anomaly_streak + 1 if decision_cache.anomaly else max(0, anomaly_streak - 1)
+                        if speech_window_active:
+                            anomaly_streak = anomaly_streak + 1 if decision_cache.anomaly else max(0, anomaly_streak - 1)
+                        else:
+                            anomaly_streak = max(0, anomaly_streak - 1)
                         escalation_level = "ALERT" if anomaly_streak >= 3 else ("WARNING" if anomaly_streak >= 2 else "NORMAL")
 
                         # Temporal escalation policy.
-                        if anomaly_streak == 2:
+                        if speech_window_active and anomaly_streak == 2:
                             self._flag_event(
                                 "VOICE_POLICY_WARNING",
                                 risk,
@@ -399,7 +508,7 @@ class MonitoringWorker:
                                 window_audio,
                                 {"reason": decision_cache.reason, "streak": anomaly_streak},
                             )
-                        elif anomaly_streak >= 3:
+                        elif speech_window_active and anomaly_streak >= 3:
                             self._flag_event(
                                 "CHEATING_ALERT",
                                 risk,
@@ -408,7 +517,14 @@ class MonitoringWorker:
                                 {"reason": decision_cache.reason, "streak": anomaly_streak},
                             )
 
-                        suspicious = decision_cache.anomaly or (sync_res.score < self.audio_sync_low_score_threshold) or (len(sync_res.flags) >= 2)
+                        suspicious = bool(
+                            speech_window_active
+                            and (
+                                decision_cache.anomaly
+                                or (sync_res.score < self.audio_sync_low_score_threshold)
+                                or (len(sync_res.flags) >= 2)
+                            )
+                        )
                         suspicious_streak = suspicious_streak + 1 if suspicious else 0
                         verify_score = None
                         if suspicious_streak >= self.suspicious_streak_for_verify and len(motion_series) >= 30:
@@ -464,6 +580,11 @@ class MonitoringWorker:
                         multiple_voice_reason=multiple_voice_reason,
                         speaker_count=int(multi_cache.speaker_count),
                         speaker_count_confidence=float(multi_cache.confidence),
+                        gaze_enabled=bool(gaze_ok),
+                        gaze_status=str(gaze_cache.status),
+                        gaze_confidence=float(gaze_cache.confidence),
+                        gaze_calibrated=bool(gaze_cache.calibrated),
+                        gaze_progress=float(gaze_cache.progress),
                         speaker_similarity_bar=float(decision_cache.similarity_score),
                         voice_stability=str(stability_label),
                         active_speaker_status=active_speaker_status,
@@ -471,6 +592,7 @@ class MonitoringWorker:
                         verification_state=str(decision_cache.state),
                         escalation_level=escalation_level,
                         anomaly_streak=int(anomaly_streak),
+                        error=gaze_cache.error if gaze_cache.error else "",
                     )
 
                     time.sleep(0.01)
