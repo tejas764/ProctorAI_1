@@ -16,7 +16,7 @@ from speaker_verification import SpeakerVerificationResult, SpeakerVerifier
 from voice_biometric_store import VoiceBiometricStore
 from voice_features import extract_voice_features
 from web_modules.audio import AudioMonitor
-from web_modules.gaze_bridge import GazeEngine, GazeReading
+from web_modules.gaze_bridge import GazeEngine, GazeReading, _reading_kwargs
 from web_modules.verification_logic import (
     DriftTracker,
     MultiSpeakerEstimate,
@@ -65,7 +65,7 @@ def _human_flag_detail(reason: str, details: dict[str, object] | None = None) ->
 
 
 def compute_mar(face_landmarks: object) -> float:
-    pts = face_landmarks.landmark
+    pts = getattr(face_landmarks, "landmark")
     upper_inner = pts[13]
     lower_inner = pts[14]
     left_corner = pts[78]
@@ -133,6 +133,15 @@ class MonitoringWorker:
             "gaze_confidence": 0.0,
             "gaze_calibrated": False,
             "gaze_progress": 0.0,
+            "gaze_step": "",
+            "gaze_step_index": 0,
+            "gaze_total_steps": 0,
+            "gaze_step_progress": 0.0,
+            "gaze_prompt": "",
+            "gaze_awaiting_start": False,
+            "gaze_countdown_active": False,
+            "gaze_countdown_remaining": 0.0,
+            "gaze_capturing": False,
             "speaker_similarity_bar": 0.0,
             "voice_stability": "Stable",
             "active_speaker_status": "UNKNOWN",
@@ -145,6 +154,7 @@ class MonitoringWorker:
             "updated_at": _utc_now_iso(),
             "error": "",
         }
+        self._gaze_engine: GazeEngine | None = None
 
     def _update_state(self, **kwargs: object) -> None:
         with self._lock:
@@ -189,11 +199,84 @@ class MonitoringWorker:
             self._state["risk_level"] = risk.level()
             self._state["updated_at"] = _utc_now_iso()
 
-    @staticmethod
-    def _update_counter(counters: dict[str, int], key: str, active: bool) -> int:
-        value = counters.get(key, 0) + 1 if active else 0
-        counters[key] = value
-        return value
+    def _apply_gaze_reading(self, reading: GazeReading) -> None:
+        self._update_state(
+            gaze_enabled=bool(self._gaze_engine and self._gaze_engine.ready),
+            gaze_status=reading.status,
+            gaze_confidence=reading.confidence,
+            gaze_calibrated=reading.calibrated,
+            gaze_progress=reading.progress,
+            gaze_step=reading.step,
+            gaze_step_index=reading.step_index,
+            gaze_total_steps=reading.total_steps,
+            gaze_step_progress=reading.step_progress,
+            gaze_prompt=reading.prompt,
+            gaze_awaiting_start=reading.awaiting_start,
+            gaze_error=reading.error,
+        )
+
+    def get_gaze_state(self) -> dict[str, object]:
+        state = self.get_state()
+        return {
+            "enabled": state.get("gaze_enabled", False),
+            "status": state.get("gaze_status", "DISABLED"),
+            "confidence": state.get("gaze_confidence", 0.0),
+            "calibrated": state.get("gaze_calibrated", False),
+            "progress": state.get("gaze_progress", 0.0),
+            "step": state.get("gaze_step", ""),
+            "step_index": state.get("gaze_step_index", 0),
+            "total_steps": state.get("gaze_total_steps", 0),
+            "step_progress": state.get("gaze_step_progress", 0.0),
+            "prompt": state.get("gaze_prompt", ""),
+            "awaiting_start": state.get("gaze_awaiting_start", False),
+            "countdown_active": state.get("gaze_countdown_active", False),
+            "countdown_remaining": state.get("gaze_countdown_remaining", 0.0),
+            "capturing": state.get("gaze_capturing", False),
+            "error": state.get("error", ""),
+        }
+
+    def begin_gaze_calibration_step(self) -> tuple[bool, str, dict[str, object]]:
+        if self._gaze_engine is None:
+            state = self.get_gaze_state()
+            state["error"] = self.get_state().get("error", "Gaze engine unavailable")
+            return False, "Gaze engine unavailable.", state
+        ok, message, state = self._gaze_engine.begin_calibration_step()
+        self._update_state(
+            gaze_step=state.get("step", ""),
+            gaze_step_index=state.get("step_index", 0),
+            gaze_total_steps=state.get("total_steps", 0),
+            gaze_step_progress=state.get("step_progress", 0.0),
+            gaze_progress=state.get("progress", 0.0),
+            gaze_prompt=state.get("prompt", ""),
+            gaze_awaiting_start=state.get("awaiting_start", False),
+            gaze_countdown_active=state.get("countdown_active", False),
+            gaze_countdown_remaining=state.get("countdown_remaining", 0.0),
+            gaze_capturing=state.get("capturing", False),
+        )
+        return ok, message, self.get_gaze_state()
+
+    def reset_gaze_calibration(self) -> tuple[bool, str, dict[str, object]]:
+        if self._gaze_engine is None:
+            state = self.get_gaze_state()
+            state["error"] = self.get_state().get("error", "Gaze engine unavailable")
+            return False, "Gaze engine unavailable.", state
+        ok, message, state = self._gaze_engine.reset_calibration(delete_saved=True)
+        self._update_state(
+            gaze_status="CALIBRATING",
+            gaze_calibrated=False,
+            gaze_confidence=0.0,
+            gaze_step=state.get("step", ""),
+            gaze_step_index=state.get("step_index", 0),
+            gaze_total_steps=state.get("total_steps", 0),
+            gaze_step_progress=state.get("step_progress", 0.0),
+            gaze_progress=state.get("progress", 0.0),
+            gaze_prompt=state.get("prompt", ""),
+            gaze_awaiting_start=state.get("awaiting_start", False),
+            gaze_countdown_active=state.get("countdown_active", False),
+            gaze_countdown_remaining=state.get("countdown_remaining", 0.0),
+            gaze_capturing=state.get("capturing", False),
+        )
+        return ok, message, self.get_gaze_state()
 
     def start(self, user_id: str) -> tuple[bool, str]:
         if self._thread and self._thread.is_alive():
@@ -215,6 +298,19 @@ class MonitoringWorker:
             last_flag_details="",
             risk_score=0,
             risk_level="NORMAL",
+            gaze_status="DISABLED",
+            gaze_confidence=0.0,
+            gaze_calibrated=False,
+            gaze_progress=0.0,
+            gaze_step="",
+            gaze_step_index=0,
+            gaze_total_steps=0,
+            gaze_step_progress=0.0,
+            gaze_prompt="",
+            gaze_awaiting_start=False,
+            gaze_countdown_active=False,
+            gaze_countdown_remaining=0.0,
+            gaze_capturing=False,
         )
         self._thread = threading.Thread(target=self._run, daemon=True)
         self._thread.start()
@@ -253,14 +349,17 @@ class MonitoringWorker:
             face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_frontalface_default.xml")
             face_cascade_alt = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_frontalface_alt2.xml")
             gaze_engine = GazeEngine()
+            self._gaze_engine = gaze_engine
             gaze_ok, gaze_message = gaze_engine.start()
             gaze_cache = GazeReading(
-                status="DISABLED" if not gaze_ok else "CALIBRATING",
+                status="DISABLED" if not gaze_ok else ("INSIDE" if gaze_engine.calibrated else "CALIBRATING"),
                 confidence=0.0,
-                calibrated=False,
-                progress=0.0,
+                calibrated=gaze_engine.calibrated,
                 error="" if gaze_ok else gaze_message,
+                **_reading_kwargs(gaze_engine.calibration_state()),
             )
+            self._apply_gaze_reading(gaze_cache)
+            self._update_state(error="" if gaze_ok else gaze_message)
             outside_gaze_streak = 0
             frame_index = 0
             motion_series: deque[float] = deque(maxlen=120)
@@ -366,6 +465,13 @@ class MonitoringWorker:
                     # Run gaze inference every other frame to reduce CPU load.
                     if gaze_ok and (frame_index % 2 == 0):
                         gaze_cache = gaze_engine.process(frame)
+                        self._apply_gaze_reading(gaze_cache)
+                        gaze_state = gaze_engine.calibration_state()
+                        self._update_state(
+                            gaze_countdown_active=bool(gaze_state.get("countdown_active", False)),
+                            gaze_countdown_remaining=float(gaze_state.get("countdown_remaining", 0.0)),
+                            gaze_capturing=bool(gaze_state.get("capturing", False)),
+                        )
                     elif not gaze_ok:
                         gaze_cache = GazeReading(
                             status="DISABLED",
@@ -605,4 +711,5 @@ class MonitoringWorker:
         except Exception as exc:  # noqa: BLE001
             self._update_state(error=str(exc))
         finally:
+            self._gaze_engine = None
             self._update_state(running=False)

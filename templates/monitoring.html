@@ -75,6 +75,15 @@
       background: linear-gradient(180deg, #f8fbff, #eef4fb);
       position: relative;
       min-height: 420px;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+    }
+
+    .target-grid {
+      position: absolute;
+      inset: 16px;
+      pointer-events: none;
     }
 
     .target {
@@ -86,8 +95,74 @@
       box-shadow: 0 0 0 8px rgba(0, 109, 119, 0.16);
       position: absolute;
       transform: translate(-50%, -50%);
-      transition: left 2.8s linear, top 2.8s linear;
+      transition: left 0.35s ease, top 0.35s ease, opacity 0.2s ease, transform 0.2s ease;
+    }
+
+    .target.active {
       animation: pulse 1.3s ease-in-out infinite;
+      transform: translate(-50%, -50%) scale(1.05);
+    }
+
+    .target-label {
+      position: absolute;
+      top: 18px;
+      left: 18px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(20, 33, 50, 0.86);
+      color: #fff;
+      font-size: 0.82rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .calib-panel {
+      position: relative;
+      z-index: 1;
+      width: min(540px, calc(100% - 32px));
+      background: rgba(255, 255, 255, 0.94);
+      border: 1px solid rgba(213, 222, 233, 0.95);
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+      padding: 18px;
+      display: grid;
+      gap: 10px;
+      backdrop-filter: blur(8px);
+    }
+
+    .calib-panel h2 {
+      margin: 0;
+      font-size: 1rem;
+      font-weight: 800;
+    }
+
+    .calib-panel p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    .calib-progress {
+      display: grid;
+      gap: 8px;
+    }
+
+    .calib-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .btn.secondary {
+      background: #e4edf6;
+      color: var(--text);
+      border: 1px solid var(--line);
+    }
+
+    .btn:disabled {
+      cursor: not-allowed;
+      opacity: 0.6;
     }
 
     @keyframes pulse {
@@ -313,15 +388,50 @@
     <section id="calibScreen" class="calib">
       <div>
         <h1>Eye Calibration</h1>
-        <p id="calibInstruction">Keep your face centered. Click Start and follow the moving point with your eyes only.</p>
+        <p id="calibInstruction">The web app now follows the `ProctorGuardAI-master/chunks.py` calibration flow. Keep your head steady, look at the highlighted point, and press Start for each step.</p>
       </div>
       <div id="calibSpace" class="calib-space">
-        <div id="target" class="target hidden"></div>
+        <div class="target-grid">
+          <div id="targetCenter" class="target hidden" style="left: 50%; top: 50%;"></div>
+          <div id="targetLeft" class="target hidden" style="left: 12%; top: 50%;"></div>
+          <div id="targetRight" class="target hidden" style="left: 88%; top: 50%;"></div>
+          <div id="targetTop" class="target hidden" style="left: 50%; top: 14%;"></div>
+          <div id="targetBottom" class="target hidden" style="left: 50%; top: 86%;"></div>
+          <div id="targetStepLabel" class="target-label hidden">CENTER</div>
+        </div>
+        <div class="calib-panel">
+          <h2 id="calibTitle">Waiting for gaze backend</h2>
+          <p id="calibPrompt">Starting monitoring will load the OpenVINO gaze models from `ProctorGuardAI-master/chunks.py`.</p>
+          <div class="calib-progress">
+            <div class="stat">
+              <div class="k">Step</div>
+              <div id="calibStepMeta" class="v">0 / 0</div>
+            </div>
+            <div class="stat">
+              <div class="k">Current Prompt</div>
+              <div id="calibBackendPrompt" class="v">-</div>
+            </div>
+            <div class="stat">
+              <div class="k">Overall Progress</div>
+              <div id="calibOverall" class="v">0%</div>
+              <div class="meter"><div id="calibOverallBar" class="fill"></div></div>
+            </div>
+            <div class="stat">
+              <div class="k">Step Progress</div>
+              <div id="calibStepProgress" class="v">0%</div>
+              <div class="meter"><div id="calibStepBar" class="fill"></div></div>
+            </div>
+          </div>
+          <div class="calib-actions">
+            <button id="startCalibBtn" class="btn">Start Step</button>
+            <button id="resetCalibBtn" class="btn secondary">Reset Calibration</button>
+          </div>
+        </div>
       </div>
       <div class="calib-footer">
         <span id="calibStatus" class="badge warn">Waiting to start</span>
         <div>
-          <button id="startCalibBtn" class="btn">Start Calibration</button>
+          <span id="calibHint" class="badge">Load the camera feed and complete all steps.</span>
         </div>
       </div>
     </section>
@@ -386,7 +496,22 @@
     const calibInstruction = document.getElementById("calibInstruction");
     const calibStatus = document.getElementById("calibStatus");
     const startCalibBtn = document.getElementById("startCalibBtn");
-    const target = document.getElementById("target");
+    const resetCalibBtn = document.getElementById("resetCalibBtn");
+    const targetCenter = document.getElementById("targetCenter");
+    const targetLeft = document.getElementById("targetLeft");
+    const targetRight = document.getElementById("targetRight");
+    const targetTop = document.getElementById("targetTop");
+    const targetBottom = document.getElementById("targetBottom");
+    const targetStepLabel = document.getElementById("targetStepLabel");
+    const calibTitle = document.getElementById("calibTitle");
+    const calibPrompt = document.getElementById("calibPrompt");
+    const calibBackendPrompt = document.getElementById("calibBackendPrompt");
+    const calibStepMeta = document.getElementById("calibStepMeta");
+    const calibStepProgress = document.getElementById("calibStepProgress");
+    const calibStepBar = document.getElementById("calibStepBar");
+    const calibOverall = document.getElementById("calibOverall");
+    const calibOverallBar = document.getElementById("calibOverallBar");
+    const calibHint = document.getElementById("calibHint");
 
     const userIdEl = document.getElementById("userId");
     const facesEl = document.getElementById("faces");
@@ -419,6 +544,14 @@
     let latestState = {};
     let pollTimer = null;
     let prevState = null;
+
+    const stepTargets = {
+      CENTER: targetCenter,
+      LEFT: targetLeft,
+      RIGHT: targetRight,
+      TOP: targetTop,
+      BOTTOM: targetBottom,
+    };
 
     function fmt(v) {
       if (v === null || v === undefined) return "-";
@@ -502,6 +635,7 @@
       gazeCalEl.textContent = s.gaze_calibrated ? "Calibrated" : `${gp}%`;
       styleValue(gazeCalEl, s.gaze_calibrated ? "ok" : "warn");
       gazeBarEl.style.width = `${Math.max(0, Math.min(100, gp))}%`;
+      syncCalibrationPanel(s);
 
       spkEl.textContent = s.speaker_decision || "UNKNOWN";
       const speakerOk = s.speaker_decision === "MATCH";
@@ -566,46 +700,128 @@
       styleValue(errEl, s.error ? "err" : "ok");
     }
 
-    async function runCalibrationGuide() {
-      const targets = [
-        { name: "CENTER", x: 50, y: 50, holdMs: 2200 },
-        { name: "TOP LEFT CORNER", x: 8, y: 8, holdMs: 3200 },
-        { name: "TOP RIGHT CORNER", x: 92, y: 8, holdMs: 3200 },
-        { name: "BOTTOM RIGHT CORNER", x: 92, y: 92, holdMs: 3200 },
-        { name: "BOTTOM LEFT CORNER", x: 8, y: 92, holdMs: 3200 },
-        { name: "CENTER", x: 50, y: 50, holdMs: 2600 },
-      ];
+    async function startGazeStep() {
+      const resp = await fetch("/api/monitor/gaze/start-step", { method: "POST" });
+      const data = await resp.json();
+      if (!resp.ok || !data.ok) {
+        throw new Error(data.message || data.error || "Unable to start gaze calibration step");
+      }
+      return data.state || {};
+    }
 
+    async function resetGazeCalibration() {
+      const resp = await fetch("/api/monitor/gaze/reset", { method: "POST" });
+      const data = await resp.json();
+      if (!resp.ok || !data.ok) {
+        throw new Error(data.message || data.error || "Unable to reset gaze calibration");
+      }
+      return data.state || {};
+    }
+
+    function setActiveTarget(stepName) {
+      Object.values(stepTargets).forEach((el) => {
+        el.classList.add("hidden");
+        el.classList.remove("active");
+      });
+      if (!stepName || !stepTargets[stepName]) {
+        targetStepLabel.classList.add("hidden");
+        return;
+      }
+      const target = stepTargets[stepName];
       target.classList.remove("hidden");
-      calibStatus.textContent = "Calibration running";
-      styleBadge(calibStatus, "warn");
-      startCalibBtn.disabled = true;
+      target.classList.add("active");
+      targetStepLabel.textContent = stepName;
+      targetStepLabel.classList.remove("hidden");
+    }
 
-      for (const t of targets) {
-        target.style.left = `${t.x}%`;
-        target.style.top = `${t.y}%`;
-        calibInstruction.textContent = `Follow the dot slowly to ${t.name}. Keep your head stable and move eyes only.`;
-        await sleep(t.holdMs);
+    function syncCalibrationPanel(s) {
+      const stepName = (s.gaze_step || "").toUpperCase();
+      const totalSteps = Number(s.gaze_total_steps || 0);
+      const stepIndex = Number(s.gaze_step_index || 0);
+      const overallPct = Math.max(0, Math.min(100, Math.round(100 * Number(s.gaze_progress || 0))));
+      const stepPct = Math.max(0, Math.min(100, Math.round(100 * Number(s.gaze_step_progress || 0))));
+      const countdownRemaining = Number(s.gaze_countdown_remaining || 0);
+      const calibrated = !!s.gaze_calibrated;
+      const awaitingStart = !!s.gaze_awaiting_start;
+      const capturing = !!s.gaze_capturing;
+      const countdownActive = !!s.gaze_countdown_active;
+
+      setActiveTarget(calibrated ? "" : stepName);
+      calibTitle.textContent = calibrated ? "Calibration complete" : (stepName ? `Focus on ${stepName}` : "Waiting for calibration");
+      calibPrompt.textContent = s.gaze_prompt || s.error || "Follow the backend prompts for calibration.";
+      calibBackendPrompt.textContent = s.gaze_prompt || "-";
+      calibStepMeta.textContent = totalSteps ? `${Math.min(stepIndex + (calibrated ? 0 : 1), totalSteps)} / ${totalSteps}` : "0 / 0";
+      calibStepProgress.textContent = `${stepPct}%`;
+      calibStepBar.style.width = `${stepPct}%`;
+      calibOverall.textContent = calibrated ? "100%" : `${overallPct}%`;
+      calibOverallBar.style.width = `${overallPct}%`;
+
+      if (calibrated) {
+        calibStatus.textContent = "Calibration complete";
+        styleBadge(calibStatus, "ok");
+        calibHint.textContent = "Gaze baseline loaded. Switching to dashboard...";
+        startCalibBtn.disabled = true;
+        // Transition to the monitoring dashboard after a brief delay
+        setTimeout(() => {
+          calibScreen.classList.add("hidden");
+          dashboard.classList.remove("hidden");
+        }, 750);
+      } else if (capturing) {
+        calibStatus.textContent = `Capturing ${stepName}`;
+        styleBadge(calibStatus, "warn");
+        calibHint.textContent = "Keep your eyes fixed on the highlighted point until capture finishes.";
+        startCalibBtn.disabled = true;
+      } else if (countdownActive) {
+        calibStatus.textContent = `Starting in ${countdownRemaining.toFixed(1)}s`;
+        styleBadge(calibStatus, "warn");
+        calibHint.textContent = "Hold still. Capture will begin automatically after the countdown.";
+        startCalibBtn.disabled = true;
+      } else if (awaitingStart) {
+        calibStatus.textContent = `Ready for ${stepName || "next step"}`;
+        styleBadge(calibStatus, "warn");
+        calibHint.textContent = "Look at the highlighted point, then press Start Step.";
+        startCalibBtn.disabled = false;
+      } else {
+        calibStatus.textContent = s.error ? "Calibration error" : "Preparing calibration";
+        styleBadge(calibStatus, s.error ? "err" : "warn");
+        calibHint.textContent = s.error || "Waiting for the backend to become ready.";
+        startCalibBtn.disabled = !!s.error;
       }
 
-      calibInstruction.textContent = "Finishing calibration. Hold center for a moment.";
-      target.style.left = "50%";
-      target.style.top = "50%";
+      resetCalibBtn.disabled = !s.gaze_enabled;
 
-      const waitStart = Date.now();
-      while (!latestState.gaze_calibrated && (Date.now() - waitStart) < 9000) {
-        const gp = Math.round(100 * Number(latestState.gaze_progress || 0));
-        calibStatus.textContent = `Backend calibration ${gp}%`;
-        await sleep(450);
+      if (s.error) {
+        calibStatus.textContent = "Calibration error";
+        styleBadge(calibStatus, "err");
+        calibHint.textContent = s.error;
       }
+    }
 
-      const calibrated = !!latestState.gaze_calibrated;
-      calibStatus.textContent = calibrated ? "Calibration complete" : "Calibration completed with partial confidence";
-      styleBadge(calibStatus, calibrated ? "ok" : "warn");
-      await sleep(750);
+    async function runCalibrationGuide() {
+      try {
+        const state = await startGazeStep();
+        latestState = { ...latestState, ...Object.fromEntries(Object.entries(state).map(([k, v]) => [`gaze_${k}`, v])) };
+        appendLog("INFO", `Gaze calibration step started: ${state.step || "UNKNOWN"}`);
+      } catch (e) {
+        calibStatus.textContent = "Calibration error";
+        styleBadge(calibStatus, "err");
+        calibHint.textContent = e.message;
+        appendLog("ERROR", e.message);
+      }
+    }
 
-      calibScreen.classList.add("hidden");
-      dashboard.classList.remove("hidden");
+    async function handleCalibrationReset() {
+      try {
+        const state = await resetGazeCalibration();
+        latestState = { ...latestState, ...Object.fromEntries(Object.entries(state).map(([k, v]) => [`gaze_${k}`, v])) };
+        syncCalibrationPanel(latestState);
+        appendLog("INFO", "Gaze calibration reset.");
+      } catch (e) {
+        calibStatus.textContent = "Reset failed";
+        styleBadge(calibStatus, "err");
+        calibHint.textContent = e.message;
+        appendLog("ERROR", e.message);
+      }
     }
 
     async function boot() {
@@ -620,13 +836,15 @@
       await pollState();
       pollTimer = setInterval(pollState, 650);
 
-      startCalibBtn.addEventListener("click", runCalibrationGuide, { once: true });
+      startCalibBtn.addEventListener("click", runCalibrationGuide);
+      resetCalibBtn.addEventListener("click", handleCalibrationReset);
     }
 
     boot().catch((e) => {
       calibInstruction.textContent = e.message;
       calibStatus.textContent = "Startup error";
       styleBadge(calibStatus, "err");
+      calibHint.textContent = e.message;
     });
 
     window.addEventListener("beforeunload", () => {

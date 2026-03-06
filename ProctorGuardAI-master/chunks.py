@@ -1,3 +1,4 @@
+
 """
 ProctorGuard AI - Hybrid 3.3 (4D Mahalanobis + Recalibrated Confidence Range)
 Modified:
@@ -9,11 +10,13 @@ Modified:
 - Head-pose tracking during calibration
 - Ground-truth labeling (press 'i' for INSIDE, 'o' for OUTSIDE)
 - Saves ground truth to CSV for evaluation
+- Persistent calibration save/load (press 'r' to recalibrate)
 """
 
 import cv2
 import time
 import csv
+import os
 import numpy as np
 from openvino import Core
 
@@ -45,6 +48,7 @@ OUTSIDE_THRESHOLD = 0.08
 CONF_WINDOW = 6
 
 LOG_FILE = "gaze_log.csv"
+CALIBRATION_FILE = "calibration_data.npz"
 
 PROMPT_COLOR = (255, 0, 0)
 PROGRESS_COLOR = (255, 0, 0)
@@ -104,6 +108,31 @@ def largest_face(dets, shape, conf=0.6):
         if best is None or area > best[0]:
             best = (area, (x1, y1, x2, y2))
     return None if best is None else best[1]
+
+# ==========================
+# CALIBRATION SAVE / LOAD
+# ==========================
+
+def save_calibration(mean_gaze, inv_cov, H_THRESHOLD, V_THRESHOLD):
+    np.savez(
+        CALIBRATION_FILE,
+        mean_gaze=mean_gaze,
+        inv_cov=inv_cov,
+        H_THRESHOLD=np.array([H_THRESHOLD]),
+        V_THRESHOLD=np.array([V_THRESHOLD]),
+    )
+    print("Calibration saved to disk.")
+
+def load_calibration():
+    if not os.path.exists(CALIBRATION_FILE):
+        return None
+    data = np.load(CALIBRATION_FILE)
+    return {
+        "mean_gaze": data["mean_gaze"],
+        "inv_cov": data["inv_cov"],
+        "H_THRESHOLD": float(data["H_THRESHOLD"][0]),
+        "V_THRESHOLD": float(data["V_THRESHOLD"][0]),
+    }
 
 # ==========================
 # FEATURE EXTRACTION
@@ -189,6 +218,19 @@ def run():
     BTN_X, BTN_Y = 30, 80
     button_rect = (BTN_X, BTN_Y, BTN_W, BTN_H)
     button_clicked = False
+
+    # --- Attempt to load saved calibration ---
+    saved = load_calibration()
+    if saved is not None:
+        mean_gaze = saved["mean_gaze"]
+        inv_cov = saved["inv_cov"]
+        H_THRESHOLD = saved["H_THRESHOLD"]
+        V_THRESHOLD = saved["V_THRESHOLD"]
+        learned = True
+        calib_index = len(CALIBRATION_STEPS)
+        print("Loaded saved calibration.")
+    else:
+        print("No calibration found. Starting calibration...")
 
     def on_mouse(event, x, y, flags, param):
         nonlocal button_clicked
@@ -285,6 +327,7 @@ def run():
                 V_THRESHOLD = np.percentile(vertical_scores, 95) * GEOMETRIC_MARGIN
 
                 learned = True
+                save_calibration(mean_gaze, inv_cov, H_THRESHOLD, V_THRESHOLD)
 
             total_expected = FRAMES_PER_STEP * len(CALIBRATION_STEPS)
             cv2.putText(frame, f"Progress: {len(learning_samples)}/{total_expected}",
@@ -382,6 +425,9 @@ def run():
             cv2.putText(frame, f"H_th:{H_THRESHOLD:.3f} V_th:{V_THRESHOLD:.3f}",
                         (30, 320), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (200, 200, 200), 1)
 
+            cv2.putText(frame, "Press 'r' to recalibrate", (30, 360),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (180, 180, 180), 1)
+
         cv2.imshow("ProctorGuard Hybrid 3.3", frame)
 
         key = cv2.waitKey(1) & 0xFF
@@ -394,6 +440,26 @@ def run():
             ground_truth = 0
         if key == ord('o'):
             ground_truth = 1
+        if key == ord('r'):
+            if os.path.exists(CALIBRATION_FILE):
+                os.remove(CALIBRATION_FILE)
+                print("Calibration deleted. Restarting calibration...")
+            # Reset all calibration state
+            learned = False
+            learning_samples = []
+            calib_index = 0
+            start_pressed = False
+            start_time = None
+            capturing = False
+            frames_captured = 0
+            confidence_history = []
+            current_status = "INSIDE"
+            outside_counter = 0
+            prev_dx, prev_dy = 0, 0
+            mean_gaze = None
+            inv_cov = None
+            H_THRESHOLD = 0.0
+            V_THRESHOLD = 0.0
 
     cap.release()
     log.close()

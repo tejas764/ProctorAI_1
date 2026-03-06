@@ -1,63 +1,15 @@
 {
-  "generated_at": "2026-03-05T08:13:11.915118+00:00",
-  "risk_score": 5,
-  "risk_level": "WARNING",
+  "generated_at": "2026-03-06T13:50:33.753482+00:00",
+  "risk_score": 1,
+  "risk_level": "NORMAL",
   "events": [
     {
-      "timestamp_s": 1772698185.8049653,
+      "timestamp_s": 1772805026.4551373,
       "reason": "GAZE_OUTSIDE",
       "risk_delta": 1,
       "risk_total": 1,
-      "frame_path": "proctor_logs\\frames\\1772698185804_gaze_outside.jpg",
-      "audio_path": "proctor_logs\\audio\\1772698185804_gaze_outside.wav",
-      "details": {
-        "gaze_confidence": 0.0,
-        "gaze_status": "OUTSIDE"
-      }
-    },
-    {
-      "timestamp_s": 1772698336.168163,
-      "reason": "GAZE_OUTSIDE",
-      "risk_delta": 1,
-      "risk_total": 2,
-      "frame_path": "proctor_logs\\frames\\1772698336168_gaze_outside.jpg",
-      "audio_path": "proctor_logs\\audio\\1772698336168_gaze_outside.wav",
-      "details": {
-        "gaze_confidence": 0.0,
-        "gaze_status": "OUTSIDE"
-      }
-    },
-    {
-      "timestamp_s": 1772698345.1503892,
-      "reason": "GAZE_OUTSIDE",
-      "risk_delta": 1,
-      "risk_total": 3,
-      "frame_path": "proctor_logs\\frames\\1772698345150_gaze_outside.jpg",
-      "audio_path": "proctor_logs\\audio\\1772698345150_gaze_outside.wav",
-      "details": {
-        "gaze_confidence": 0.0,
-        "gaze_status": "OUTSIDE"
-      }
-    },
-    {
-      "timestamp_s": 1772698367.2675738,
-      "reason": "GAZE_OUTSIDE",
-      "risk_delta": 1,
-      "risk_total": 4,
-      "frame_path": "proctor_logs\\frames\\1772698367267_gaze_outside.jpg",
-      "audio_path": "proctor_logs\\audio\\1772698367267_gaze_outside.wav",
-      "details": {
-        "gaze_confidence": 0.0,
-        "gaze_status": "OUTSIDE"
-      }
-    },
-    {
-      "timestamp_s": 1772698372.8933403,
-      "reason": "GAZE_OUTSIDE",
-      "risk_delta": 1,
-      "risk_total": 5,
-      "frame_path": "proctor_logs\\frames\\1772698372893_gaze_outside.jpg",
-      "audio_path": "proctor_logs\\audio\\1772698372893_gaze_outside.wav",
+      "frame_path": "proctor_logs\\frames\\1772805026455_gaze_outside.jpg",
+      "audio_path": "proctor_logs\\audio\\1772805026455_gaze_outside.wav",
       "details": {
         "gaze_confidence": 0.0,
         "gaze_status": "OUTSIDE"

@@ -162,6 +162,22 @@ def create_app() -> Flask:
         monitor.stop()
         return jsonify({"ok": True, "state": monitor.get_state()})
 
+    @app.get("/api/monitor/gaze")
+    def monitor_gaze_state() -> object:
+        return jsonify(monitor.get_gaze_state())
+
+    @app.post("/api/monitor/gaze/start-step")
+    def monitor_gaze_start_step() -> object:
+        ok, message, state = monitor.begin_gaze_calibration_step()
+        code = 200 if ok else 400
+        return jsonify({"ok": ok, "message": message, "state": state}), code
+
+    @app.post("/api/monitor/gaze/reset")
+    def monitor_gaze_reset() -> object:
+        ok, message, state = monitor.reset_gaze_calibration()
+        code = 200 if ok else 400
+        return jsonify({"ok": ok, "message": message, "state": state}), code
+
     @app.get("/api/monitor/state")
     def monitor_state() -> object:
         return jsonify(monitor.get_state())
