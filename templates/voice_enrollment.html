@@ -215,7 +215,7 @@
     let audioCtx;
     let analyser;
     let sourceNode;
-    let processor;
+    let workletNode;
     let recording = false;
     let pcmChunks = [];
     let sampleRate = 16000;
@@ -319,14 +319,41 @@
       analyser.fftSize = 2048;
       sourceNode.connect(analyser);
 
-      processor = audioCtx.createScriptProcessor(1024, 1, 1);
-      sourceNode.connect(processor);
-      processor.connect(audioCtx.destination);
-      processor.onaudioprocess = onAudioProcess;
+      await initAudioWorklet();
 
       initFaceMesh();
       drawWave();
       startFaceLoop();
+    }
+
+    async function initAudioWorklet() {
+      const workletSource = `
+        class EnrollmentPCMProcessor extends AudioWorkletProcessor {
+          process(inputs) {
+            const input = inputs[0];
+            if (input && input[0]) {
+              this.port.postMessage(input[0]);
+            }
+            return true;
+          }
+        }
+        registerProcessor("enrollment-pcm-processor", EnrollmentPCMProcessor);
+      `;
+      const blob = new Blob([workletSource], { type: "application/javascript" });
+      const moduleUrl = URL.createObjectURL(blob);
+      try {
+        await audioCtx.audioWorklet.addModule(moduleUrl);
+      } finally {
+        URL.revokeObjectURL(moduleUrl);
+      }
+
+      workletNode = new AudioWorkletNode(audioCtx, "enrollment-pcm-processor", {
+        numberOfInputs: 1,
+        numberOfOutputs: 0,
+        channelCount: 1,
+      });
+      sourceNode.connect(workletNode);
+      workletNode.port.onmessage = (event) => onAudioChunk(event.data);
     }
 
     function initFaceMesh() {
@@ -363,6 +390,8 @@
     async function startFaceLoop() {
       const offscreen = document.createElement("canvas");
       const ctx = offscreen.getContext("2d");
+      let stableSingleFaceTicks = 0;
+      let loopDelayMs = 160;
 
       while (true) {
         if (videoEl.videoWidth > 0 && videoEl.videoHeight > 0) {
@@ -370,14 +399,27 @@
           offscreen.height = videoEl.videoHeight;
           ctx.drawImage(videoEl, 0, 0, offscreen.width, offscreen.height);
           await faceMesh.send({ image: offscreen });
+
+          if (faceCount === 1) {
+            stableSingleFaceTicks += 1;
+          } else {
+            stableSingleFaceTicks = 0;
+          }
+          const unstable = faceCount !== 1 || (recording && speakingDetected && !mouthMovementDetected);
+          if (unstable) {
+            loopDelayMs = 70;
+          } else if (stableSingleFaceTicks >= 12) {
+            loopDelayMs = 240;
+          } else {
+            loopDelayMs = 130;
+          }
         }
-        await new Promise((r) => setTimeout(r, 200));
+        await new Promise((r) => setTimeout(r, loopDelayMs));
       }
     }
 
-    function onAudioProcess(e) {
+    function onAudioChunk(input) {
       if (!recording) return;
-      const input = e.inputBuffer.getChannelData(0);
       pcmChunks.push(new Float32Array(input));
 
       let rms = 0;
@@ -435,6 +477,9 @@
 
     function startRecording() {
       if (recording) return;
+      if (audioCtx && audioCtx.state === "suspended") {
+        audioCtx.resume().catch(() => {});
+      }
       showError("");
       resetValidationFlags();
       recording = true;

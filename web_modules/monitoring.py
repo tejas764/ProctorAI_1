@@ -371,11 +371,15 @@ class MonitoringWorker:
             stable_faces = 0
             stable_face_streak = 0
             last_face_count = -1
+            last_faces: list[object] = []
+            last_num_faces = 0
             last_verify_t = 0.0
             verify_interval_s = 1.0
             min_voice_policy_rms = 0.012
             min_reliable_pitch_hz = 70.0
             max_reliable_pitch_hz = 420.0
+            face_mesh_stride = 1
+            gaze_stride = 2
             spk_cache = SpeakerVerificationResult(
                 similarity=None,
                 drift=None,
@@ -416,13 +420,27 @@ class MonitoringWorker:
 
                     frame = cv2.flip(frame, 1)
                     frame_index += 1
+                    audio_present = mic.vad()
+                    audio_rms = mic.rms()
                     faces = []
                     num_faces = 0
                     if face_mesh is not None:
-                        rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                        res = face_mesh.process(rgb)
-                        faces = res.multi_face_landmarks if res.multi_face_landmarks else []
-                        num_faces = len(faces)
+                        unstable_face_window = stable_faces != 1 or stable_face_streak < 6
+                        if unstable_face_window:
+                            face_mesh_stride = 1
+                        elif audio_present:
+                            face_mesh_stride = 3
+                        else:
+                            face_mesh_stride = 4
+
+                        run_face_mesh = (frame_index % face_mesh_stride == 0) or (frame_index <= 2)
+                        if run_face_mesh:
+                            rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                            res = face_mesh.process(rgb)
+                            last_faces = res.multi_face_landmarks if res.multi_face_landmarks else []
+                            last_num_faces = len(last_faces)
+                        faces = last_faces
+                        num_faces = last_num_faces
                     else:
                         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
                         gray_eq = cv2.equalizeHist(gray)
@@ -442,8 +460,6 @@ class MonitoringWorker:
                     if stable_face_streak >= 3:
                         stable_faces = num_faces
 
-                    audio_present = mic.vad()
-                    audio_rms = mic.rms()
                     now_t = time.time()
                     lip_sync_status = "NO_FACE"
                     mar = 0.0
@@ -465,8 +481,14 @@ class MonitoringWorker:
                     motion_series.append(mar_delta)
                     audio_series.append(audio_rms)
 
-                    # Run gaze inference every other frame to reduce CPU load.
-                    if gaze_ok and (frame_index % 2 == 0):
+                    if not gaze_cache.calibrated or gaze_cache.status in {"CALIBRATING", "OUTSIDE", "ERROR"}:
+                        gaze_stride = 1
+                    elif stable_faces == 1 and stable_face_streak >= 10 and gaze_cache.status == "INSIDE":
+                        gaze_stride = 4
+                    else:
+                        gaze_stride = 2
+
+                    if gaze_ok and (frame_index % gaze_stride == 0):
                         gaze_cache = gaze_engine.process(frame)
                         self._apply_gaze_reading(gaze_cache)
                         gaze_state = gaze_engine.calibration_state()
