@@ -17,6 +17,7 @@ from voice_biometric_store import VoiceBiometricStore
 from voice_features import extract_voice_features
 from web_modules.audio import AudioMonitor
 from web_modules.gaze_bridge import GazeEngine, GazeReading, _reading_kwargs
+from web_modules.phone_detection import PhoneDetector  # Import PhoneDetector
 from web_modules.verification_logic import (
     DriftTracker,
     MultiSpeakerEstimate,
@@ -49,19 +50,10 @@ def _human_flag_detail(reason: str, details: dict[str, object] | None = None) ->
     if reason == "MULTIPLE_FACES":
         why = str(info.get("reason", "multiple speakers/faces detected"))
         conf = info.get("confidence")
-        return f"Multiple face/voice anomaly detected ({why}, confidence={conf})."
-    if reason == "LIPSYNC_VERIFICATION_FAIL":
-        score = info.get("score")
-        return f"Lip-sync verification failed on segment check (score={score})."
-    if reason == "AUDIO_ONLY":
-        return "Audio detected without corresponding face/lip activity."
-    if reason == "PHONEME_VISEME_MISMATCH":
-        return "Audio phoneme pattern did not match visible mouth movement."
-    if reason == "VOICE_MISMATCH":
-        return "Current speaker does not match enrolled voice profile."
-    if reason == "AUDIO_WITHOUT_LIP_MOTION":
-        return "Speech energy detected while mouth motion remained too low."
-    return reason.replace("_", " ").title()
+        return f"Multiple faces detected: {why} (confidence={conf})."
+    if reason == "PHONE_DETECTED":
+        return "Cell phone detected in frame."
+    return f"Flag raised: {reason}. {str(details or '')}"
 
 
 def compute_mar(face_landmarks: object) -> float:
@@ -329,8 +321,8 @@ class MonitoringWorker:
                 cap = cv2.VideoCapture(self.camera_index)
             if not cap.isOpened():
                 raise RuntimeError(f"Cannot open camera index {self.camera_index}")
-            cap.set(cv2.CAP_PROP_FRAME_WIDTH, 960)
-            cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 540)
+            cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+            cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
             cap.set(cv2.CAP_PROP_FPS, 30)
 
             mic = AudioMonitor(self.sample_rate, self.block_size, self.vad_threshold)
@@ -348,6 +340,11 @@ class MonitoringWorker:
             face_mesh, _ = create_face_mesh_backend()
             face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_frontalface_default.xml")
             face_cascade_alt = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_frontalface_alt2.xml")
+
+            # Initialize phone detector
+            phone_detector = PhoneDetector(model_dir="web_modules")
+            last_phone_check = 0
+
             gaze_engine = GazeEngine(store=self.store, user_id=self._user_id)
             self._gaze_engine = gaze_engine
             gaze_ok, gaze_message = gaze_engine.start()
@@ -431,7 +428,7 @@ class MonitoringWorker:
                         elif audio_present:
                             face_mesh_stride = 3
                         else:
-                            face_mesh_stride = 4
+                            face_mesh_stride = 8
 
                         run_face_mesh = (frame_index % face_mesh_stride == 0) or (frame_index <= 2)
                         if run_face_mesh:
@@ -484,7 +481,7 @@ class MonitoringWorker:
                     if not gaze_cache.calibrated or gaze_cache.status in {"CALIBRATING", "OUTSIDE", "ERROR"}:
                         gaze_stride = 1
                     elif stable_faces == 1 and stable_face_streak >= 10 and gaze_cache.status == "INSIDE":
-                        gaze_stride = 4
+                        gaze_stride = 6
                     else:
                         gaze_stride = 2
 
@@ -673,6 +670,21 @@ class MonitoringWorker:
                         stability_label = self._state.get("voice_stability", "Stable")
                         escalation_level = self._state.get("escalation_level", "NORMAL")
                         verify_score = self._state.get("verify_score")
+
+                    # Run phone detection every ~1.5 seconds (45 frames)
+                    if (frame_index - last_phone_check) >= 45:
+                        detect_start = time.time()
+                        has_phone = phone_detector.detect(frame)
+                        last_phone_check = frame_index
+                        if has_phone:
+                            self._flag_event(
+                                "PHONE_DETECTED",
+                                risk,
+                                frame,
+                                mic.latest_seconds(1.0),
+                                {"confidence": "high"},
+                                cooldown_s=5.0
+                            )
 
                     multiple_voice_suspected = bool(multi_cache.speaker_count > 1)
                     multiple_voice_reason = multi_cache.reason if multiple_voice_suspected else ""

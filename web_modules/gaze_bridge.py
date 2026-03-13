@@ -41,9 +41,10 @@ class GazeEngine:
         smoothing: float = 0.7,
         mahalanobis_threshold: float = 3.0,
         outside_confirm_frames: int = 3,
-        head_weight: float = 0.015,
+        head_weight: float = 0.005,  # Decrease head weight to emphasize gaze
         geometric_margin: float = 1.2,
         adapt_rate: float = 0.01,
+        down_relax_factor: float = 0.5,  # Relax factor for downward gaze
         store: Optional[Any] = None,
         user_id: str = "",
     ) -> None:
@@ -54,6 +55,7 @@ class GazeEngine:
         self.head_weight = head_weight
         self.geometric_margin = geometric_margin
         self.adapt_rate = adapt_rate
+        self.down_relax_factor = down_relax_factor
 
         # Per-user calibration persistence via VoiceBiometricStore
         self._store = store  # VoiceBiometricStore instance (or None)
@@ -165,6 +167,7 @@ class GazeEngine:
         self._outside_threshold = float(getattr(self._module, "OUTSIDE_THRESHOLD", self._outside_threshold))
         self._confidence_window = int(getattr(self._module, "CONF_WINDOW", self._confidence_window))
         self._calibration_file = str(getattr(self._module, "CALIBRATION_FILE", self._calibration_file))
+        self.down_relax_factor = float(getattr(self._module, "DOWN_RELAX_FACTOR", self.down_relax_factor))
 
     def _load_saved_calibration(self) -> None:
         # ── Per-user calibration from DB (preferred) ──
@@ -443,6 +446,12 @@ class GazeEngine:
         maha_score = max(0.0, 1.0 - (maha / self.mahalanobis_threshold))
         horizontal_score = abs(dx) + self.head_weight * abs(float(yaw))
         vertical_score = abs(dy) + self.head_weight * abs(float(pitch))
+
+        # Relax downward gaze/head-pose to allow keyboard glances
+        # If dy > mean_gaze[1], gaze is lower than mean
+        if (dy - self._mean_gaze[1]) > 0:
+            vertical_score *= self.down_relax_factor
+
         geometric_inside = horizontal_score <= self._h_threshold and vertical_score <= self._v_threshold
         final_score = maha_score if geometric_inside else maha_score * self._geometric_soft_penalty
         confidence = float(max(0.0, min(1.0, final_score)))

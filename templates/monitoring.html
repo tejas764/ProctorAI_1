@@ -196,6 +196,16 @@
       100% { box-shadow: 0 0 0 10px rgba(54, 201, 255, 0.16), 0 0 38px rgba(54, 201, 255, 0.52); }
     }
 
+    /* Flash notification animation */
+    @keyframes flashAlert {
+      0% { box-shadow: inset 0 0 0 0 rgba(255, 93, 111, 0); }
+      10% { box-shadow: inset 0 0 100px 20px rgba(255, 93, 111, 0.6); }
+      100% { box-shadow: inset 0 0 0 0 rgba(255, 93, 111, 0); }
+    }
+    .flash-alert {
+      animation: flashAlert 0.8s ease-out;
+    }
+
     .calib-footer {
       display: flex;
       justify-content: space-between;
@@ -401,6 +411,16 @@
     .warn { background: rgba(240, 165, 20, 0.16); border-color: rgba(240, 165, 20, 0.36); color: #ffd888; }
     .err { background: rgba(255, 93, 111, 0.16); border-color: rgba(255, 93, 111, 0.36); color: #ffb0ba; }
 
+    /* Flash notification animation */
+    @keyframes flashAlert {
+      0% { box-shadow: inset 0 0 0 0 rgba(255, 93, 111, 0); }
+      10% { box-shadow: inset 0 0 100px 20px rgba(255, 93, 111, 0.6); }
+      100% { box-shadow: inset 0 0 0 0 rgba(255, 93, 111, 0); }
+    }
+    .flash-alert {
+      animation: flashAlert 0.8s ease-out;
+    }
+
     @media (max-width: 980px) {
       .layout { grid-template-columns: 1fr; }
       .meta { grid-template-columns: 1fr; }
@@ -483,7 +503,7 @@
             <div class="slot"><div class="k">User</div><div id="userId" class="v">-</div></div>
             <div class="slot"><div class="k">Last Flag</div><div id="lastReason" class="v">none</div></div>
             <div class="slot"><div class="k">Flag Details</div><div id="lastDetails" class="v">-</div></div>
-            <div class="slot"><div class="k">Error</div><div id="err" class="v">-</div></div>
+            <div class="slot"><div class="k">Warning</div><div id="warningSlot" class="v">-</div></div>
           </div>
           <div class="event-wrap">
             <div class="event-head">Live Event Logs</div>
@@ -557,7 +577,7 @@
     const verifyScoreEl = document.getElementById("verifyScore");
     const pitchEl = document.getElementById("pitch");
     const pfMatchEl = document.getElementById("pfMatch");
-    const errEl = document.getElementById("err");
+    const warningEl = document.getElementById("warningSlot");
     const flagChip = document.getElementById("flagChip");
     const runChip = document.getElementById("runChip");
     const riskChip = document.getElementById("riskChip");
@@ -602,6 +622,12 @@
       eventConsoleEl.scrollTop = eventConsoleEl.scrollHeight;
     }
 
+    function triggerFlash() {
+      document.body.classList.remove("flash-alert");
+      void document.body.offsetWidth; // Trigger reflow
+      document.body.classList.add("flash-alert");
+    }
+
     function streamStateLogs(s) {
       if (!prevState) {
         prevState = { ...s };
@@ -613,6 +639,7 @@
       if (currFlags > prevFlags) {
         const delta = currFlags - prevFlags;
         const deltaText = delta > 1 ? ` (+${delta} new)` : "";
+        triggerFlash();
         appendLog(
           "WARN",
           `Flag raised${deltaText}: ${s.last_flag_reason || "UNKNOWN"} | Why: ${s.last_flag_details || "-"} | Risk=${s.risk_score || 0} (${s.risk_level || "NORMAL"})`
@@ -721,8 +748,21 @@
 
       lastReasonEl.textContent = s.last_flag_reason || "none";
       lastDetailsEl.textContent = s.last_flag_details || "-";
-      errEl.textContent = s.error || "-";
-      styleValue(errEl, s.error ? "err" : "ok");
+      // Update warning slot logic:
+      // If there's an active system error, show it as an error.
+      // If no system error, but flags are raised, show the last flag reason as a warning.
+      // Otherwise, show placeholder.
+      if (s.error) {
+        warningEl.textContent = s.error;
+        styleValue(warningEl, "err");
+        appendLog("ERROR", s.error); // Log error to console too
+      } else if (Number(s.flags || 0) > 0) {
+        warningEl.textContent = s.last_flag_reason || "Check Logs";
+        styleValue(warningEl, "warn");
+      } else {
+        warningEl.textContent = "-";
+        styleValue(warningEl, "ok");
+      }
     }
 
     async function startGazeStep() {

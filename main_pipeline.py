@@ -64,8 +64,17 @@ def simple_face_embedding(frame: np.ndarray, face_landmarks: Any) -> np.ndarray:
     y0, y1 = max(0, min(ys)), min(h - 1, max(ys))
     if x1 <= x0 or y1 <= y0:
         return np.zeros(64, dtype=np.float32)
-    roi = cv2.cvtColor(frame[y0:y1, x0:x1], cv2.COLOR_BGR2GRAY)
-    roi = cv2.resize(roi, (64, 64))
+    roi_bgr = frame[y0:y1, x0:x1]
+    if roi_bgr.size == 0:
+         return np.zeros(64, dtype=np.float32)
+
+    roi_gray = cv2.cvtColor(roi_bgr, cv2.COLOR_BGR2GRAY)
+
+    from web_modules.frame_utils import safe_resize
+    roi = safe_resize(roi_gray, (64, 64))
+    if roi is None:
+        return np.zeros(64, dtype=np.float32)
+
     hist = cv2.calcHist([roi], [0], None, [64], [0, 256]).flatten().astype(np.float32)
     return hist / (np.linalg.norm(hist) + 1e-8)
 

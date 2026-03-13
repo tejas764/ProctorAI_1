@@ -1,4 +1,3 @@
-
 """
 ProctorGuard AI - Hybrid 3.3 (4D Mahalanobis + Recalibrated Confidence Range)
 Modified:
@@ -35,15 +34,16 @@ FRAMES_PER_STEP = 90
 WAIT_BEFORE_CAPTURE = 2.0
 ADAPT_RATE = 0.005
 
-MAHALANOBIS_THRESHOLD = 5.0
+MAHALANOBIS_THRESHOLD = 3.5
 OUTSIDE_CONFIRM_FRAMES = 6
 
-HEAD_WEIGHT = 0.02
-GEOMETRIC_MARGIN = 1.20
-GEOMETRIC_SOFT_PENALTY = 0.50
+HEAD_WEIGHT = 0.005
+GEOMETRIC_MARGIN = 1.10
+GEOMETRIC_SOFT_PENALTY = 0.05
+DOWN_RELAX_FACTOR = 0.5
 
-INSIDE_THRESHOLD = 0.12
-OUTSIDE_THRESHOLD = 0.08
+INSIDE_THRESHOLD = 0.08
+OUTSIDE_THRESHOLD = 0.04
 
 CONF_WINDOW = 6
 
@@ -356,6 +356,10 @@ def run():
 
                 horizontal_score = abs(dx) + HEAD_WEIGHT * abs(yaw)
                 vertical_score = abs(dy) + HEAD_WEIGHT * abs(pitch)
+
+                # Relax downward gaze/head-pose to allow keyboard glances
+                if (dy - mean_gaze[1]) > 0:
+                    vertical_score *= DOWN_RELAX_FACTOR
 
                 geometric_inside = (horizontal_score <= H_THRESHOLD and
                                     vertical_score <= V_THRESHOLD)

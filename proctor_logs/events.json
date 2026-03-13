@@ -1,41 +1,28 @@
 {
-  "generated_at": "2026-03-11T19:20:21.454759+00:00",
-  "risk_score": 3,
+  "generated_at": "2026-03-13T09:50:59.865122+00:00",
+  "risk_score": 2,
   "risk_level": "NORMAL",
   "events": [
     {
-      "timestamp_s": 1773256734.7266355,
-      "reason": "GAZE_OUTSIDE",
+      "timestamp_s": 1773395379.3186111,
+      "reason": "PHONE_DETECTED",
       "risk_delta": 1,
       "risk_total": 1,
-      "frame_path": "proctor_logs\\frames\\1773256734726_gaze_outside.jpg",
-      "audio_path": "proctor_logs\\audio\\1773256734726_gaze_outside.wav",
+      "frame_path": "proctor_logs\\frames\\1773395379318_phone_detected.jpg",
+      "audio_path": "proctor_logs\\audio\\1773395379318_phone_detected.wav",
       "details": {
-        "gaze_confidence": 0.0,
-        "gaze_status": "OUTSIDE"
+        "confidence": "high"
       }
     },
     {
-      "timestamp_s": 1773256740.5555084,
+      "timestamp_s": 1773395409.446286,
       "reason": "GAZE_OUTSIDE",
       "risk_delta": 1,
       "risk_total": 2,
-      "frame_path": "proctor_logs\\frames\\1773256740555_gaze_outside.jpg",
-      "audio_path": "proctor_logs\\audio\\1773256740555_gaze_outside.wav",
+      "frame_path": "proctor_logs\\frames\\1773395409446_gaze_outside.jpg",
+      "audio_path": "proctor_logs\\audio\\1773395409446_gaze_outside.wav",
       "details": {
-        "gaze_confidence": 0.02954448064168295,
-        "gaze_status": "OUTSIDE"
-      }
-    },
-    {
-      "timestamp_s": 1773256796.5319214,
-      "reason": "GAZE_OUTSIDE",
-      "risk_delta": 1,
-      "risk_total": 3,
-      "frame_path": "proctor_logs\\frames\\1773256796531_gaze_outside.jpg",
-      "audio_path": "proctor_logs\\audio\\1773256796531_gaze_outside.wav",
-      "details": {
-        "gaze_confidence": 0.10381460189819336,
+        "gaze_confidence": 0.029361736206781303,
         "gaze_status": "OUTSIDE"
       }
     }
