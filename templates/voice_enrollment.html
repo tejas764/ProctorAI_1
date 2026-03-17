@@ -105,6 +105,12 @@
       font-weight: 700;
       min-height: 22px;
     }
+    .flash {
+      margin-top: 10px;
+      color: #7ee787;
+      font-weight: 700;
+      min-height: 22px;
+    }
     .status h3 {
       margin-top: 0;
       margin-bottom: 10px;
@@ -155,6 +161,7 @@
         <button id="nextBtn" class="next" disabled>Next Question</button>
       </div>
       <div class="error" id="errorBox"></div>
+      <div class="flash" id="flashBox"></div>
     </section>
 
     <aside class="status">
@@ -186,6 +193,7 @@
     const progressEl = document.getElementById("progress");
     const questionTextEl = document.getElementById("questionText");
     const errorBox = document.getElementById("errorBox");
+    const flashBox = document.getElementById("flashBox");
     const startBtn = document.getElementById("startBtn");
     const stopBtn = document.getElementById("stopBtn");
     const rerecordBtn = document.getElementById("rerecordBtn");
@@ -231,6 +239,7 @@
     let prevMouthOpen = null;
 
     let faceMesh;
+    let firstQuestionFlashShown = false;
 
     function setPill(el, text, mode) {
       el.textContent = text;
@@ -241,11 +250,22 @@
       errorBox.textContent = msg || "";
     }
 
+    function showFlash(msg, durationMs = 5000) {
+      flashBox.textContent = msg || "";
+      if (!msg) return;
+      setTimeout(() => {
+        if (flashBox.textContent === msg) {
+          flashBox.textContent = "";
+        }
+      }, durationMs);
+    }
+
     function setQuestion() {
       const q = questions[currentIndex];
       progressEl.textContent = `Question ${currentIndex + 1} of ${questions.length}`;
       questionTextEl.textContent = q.text;
       showError("");
+      showFlash("");
       rerecordUsed = false;
       startBtn.disabled = false;
       stopBtn.disabled = true;
@@ -550,6 +570,10 @@
       showError("");
       nextBtn.disabled = false;
       if (!rerecordUsed) rerecordBtn.disabled = false;
+      if (currentIndex === 0 && !firstQuestionFlashShown) {
+        firstQuestionFlashShown = true;
+        showFlash("Response submitted. Processing for the first question may take a little time. Please do not panic.");
+      }
     }
 
     function getValidationError(recordedMs) {
