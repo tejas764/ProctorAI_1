@@ -68,6 +68,27 @@ class SpeakerVerificationResult:
     drift_threshold: Optional[float]
     status_color: str
 
+    @property
+    def similarity_avg(self) -> Optional[float]:
+        # Backward-compatible alias for older monitoring code paths.
+        return self.similarity
+
+    @property
+    def match_ratio(self) -> Optional[float]:
+        return None
+
+    @property
+    def energy_ratio(self) -> Optional[float]:
+        return None
+
+    @property
+    def energy_score(self) -> Optional[float]:
+        return None
+
+    @property
+    def spoof_score(self) -> Optional[float]:
+        return None
+
 
 class SpeakerVerifier:
     def __init__(

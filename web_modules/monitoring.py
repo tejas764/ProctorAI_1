@@ -475,13 +475,23 @@ class MonitoringWorker:
                         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
                         gray_eq = cv2.equalizeHist(gray)
                         # Faster fallback: detect on downscaled frame.
-                        small = cv2.resize(gray_eq, (0, 0), fx=0.5, fy=0.5)
-                        det = face_cascade.detectMultiScale(small, scaleFactor=1.1, minNeighbors=4, minSize=(30, 30))
-                        if len(det) == 0:
-                            det = face_cascade_alt.detectMultiScale(small, scaleFactor=1.1, minNeighbors=4, minSize=(30, 30))
-                        last_face_boxes = [(int(x * 2), int(y * 2), int((x + w) * 2), int((y + h) * 2)) for (x, y, w, h) in det]
-                        face_boxes = last_face_boxes
-                        num_faces = int(len(det))
+                        small = None
+                        if gray_eq is not None and gray_eq.size > 0:
+                            try:
+                                small = cv2.resize(gray_eq, (0, 0), fx=0.5, fy=0.5)
+                            except cv2.error:
+                                small = None
+
+                        if small is not None:
+                            det = face_cascade.detectMultiScale(small, scaleFactor=1.1, minNeighbors=4, minSize=(30, 30))
+                            if len(det) == 0:
+                                det = face_cascade_alt.detectMultiScale(small, scaleFactor=1.1, minNeighbors=4, minSize=(30, 30))
+                            last_face_boxes = [(int(x * 2), int(y * 2), int((x + w) * 2), int((y + h) * 2)) for (x, y, w, h) in det]
+                            face_boxes = last_face_boxes
+                            num_faces = int(len(det))
+                        else:
+                            face_boxes = []
+                            num_faces = 0
 
                     now_t = time.time()
                     primary_landmarks = faces[0] if faces else None

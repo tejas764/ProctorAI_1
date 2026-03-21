@@ -54,6 +54,7 @@ from chunks_modules.shared import (
     get_lip_contour_mesh,
     is_mouth_occluded_by_hand,
     majority_sync_status,
+    safe_resize,
 )
 
 
@@ -155,7 +156,26 @@ def run_live_voice_overlay() -> None:
                             if roi.size > 0:
                                 texture_std = float(np.std(roi))
                             curr_mouth_roi = extract_mouth_roi_gray(frame, lip_box)
-                            optical_flow_value = compute_optical_flow_intensity(previous_mouth_roi, curr_mouth_roi)
+                            if (curr_mouth_roi is not None) and (previous_mouth_roi is not None):
+                                # Ensure shapes match for optical flow.
+                                if curr_mouth_roi.shape != previous_mouth_roi.shape:
+                                    previous_mouth_roi = safe_resize(previous_mouth_roi, (curr_mouth_roi.shape[1], curr_mouth_roi.shape[0]))
+
+                                if previous_mouth_roi is not None:
+                                    flow = cv2.calcOpticalFlowFarneback(
+                                        previous_mouth_roi,
+                                        curr_mouth_roi,
+                                        None,
+                                        0.5,
+                                        3,
+                                        15,
+                                        3,
+                                        5,
+                                        1.2,
+                                        0,
+                                    )
+                                    mag, _ = cv2.cartToPolar(flow[..., 0], flow[..., 1])
+                                    optical_flow_value = np.mean(mag)
                             previous_mouth_roi = curr_mouth_roi
                 lips_detected, gate_stability_streak, gate_components = evaluate_multi_signal_gate(
                     face_mesh_detected,
@@ -307,4 +327,3 @@ def run_live_voice_overlay() -> None:
         if hands_detector is not None:
             hands_detector.close()
         cv2.destroyAllWindows()
-

@@ -26,6 +26,29 @@ try:
 except ImportError:
     sd = None
 
+# Clone of validation logic from frame_utils to support chunks_modules/ independently.
+def is_valid_frame(frame: Optional[np.ndarray]) -> bool:
+    if frame is None:
+        return False
+    if not hasattr(frame, "size") or frame.size == 0:
+        return False
+    if len(frame.shape) < 2:
+        return False
+    if frame.shape[0] <= 0 or frame.shape[1] <= 0:
+        return False
+    return True
+
+def safe_resize(frame: Optional[np.ndarray], target_size: tuple[int, int]) -> Optional[np.ndarray]:
+    """
+    Safely resizes a frame, returning None if invalid or failure occurs.
+    """
+    if not is_valid_frame(frame):
+        return None
+    try:
+        return cv2.resize(frame, target_size)
+    except cv2.error:
+        return None
+
 
 def calculate_mahalanobis(feature_window: deque[np.ndarray], features: np.ndarray) -> float:
     if len(feature_window) < 2:
@@ -283,19 +306,67 @@ def classify_rule_based(mouth_open: bool, audio_active: bool) -> str:
     return "QUIET"
 
 
-def extract_mouth_roi_gray(frame: np.ndarray, lip_box: tuple[int, int, int, int], pad: int = 2) -> Optional[np.ndarray]:
-    h, w = frame.shape[:2]
-    x0, y0, x1, y1 = lip_box
-    x0 = max(0, x0 - pad)
-    y0 = max(0, y0 - pad)
-    x1 = min(w, x1 + pad)
-    y1 = min(h, y1 + pad)
-    if x1 <= x0 or y1 <= y0:
-        return None
-    roi = frame[y0:y1, x0:x1]
+def extract_mouth_roi_gray(
+    frame: np.ndarray,
+    landmarks: Any,
+    pad: int = 15,
+) -> Optional[np.ndarray]:
+    ih, iw, _ = frame.shape
+    mouth_ids = [0, 13, 14, 17, 33, 37, 39, 40, 61, 146, 181, 185, 267, 269, 270, 291, 308, 375, 405, 409]
+    pts = np.array([(int(landmarks.landmark[i].x * iw), int(landmarks.landmark[i].y * ih)) for i in mouth_ids])
+    x, y, w, h = cv2.boundingRect(pts)
+    y = max(0, y - pad // 2)
+    x = max(0, x - pad)
+    h += pad
+    w += pad * 2
+    roi = frame[y : y + h, x : x + w]
     if roi.size == 0:
         return None
-    return cv2.resize(cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY), (96, 48))
+    try:
+        gray = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
+        return safe_resize(gray, (96, 48))
+    except cv2.error:
+        return None
+
+
+def calculate_texture(roi_gray: np.ndarray) -> float:
+    if roi_gray.size == 0:
+        return 0.0
+    return float(np.std(roi_gray, ddof=1))
+
+
+def extract_audio_features(
+    audio_data: deque[np.ndarray],
+    sample_rate: int,
+    window_size: int = 1024,
+) -> np.ndarray:
+    if len(audio_data) < 2:
+        return np.array([0.0, 0.0, 0.0])
+    audio_array = np.concatenate(audio_data)
+    if len(audio_array) < window_size:
+        return np.array([0.0, 0.0, 0.0])
+    # Compute short-time energy
+    energy = np.array([np.sum(np.square(audio_array[i : i + window_size])) for i in range(0, len(audio_array) - window_size + 1, window_size // 2)])
+    # Compute zero-crossing rate
+    zero_crossings = np.array([np.sum(np.abs(np.diff(np.sign(audio_array[i : i + window_size])))) for i in range(0, len(audio_array) - window_size + 1, window_size // 2)])
+    # Compute spectral features
+    stft = np.abs(cv2.dft(audio_array.astype(np.float32), flags=cv2.DFT_COMPLEX_OUTPUT))
+    freqs = np.fft.fftfreq(window_size, 1.0 / sample_rate)
+    # Keep only the positive frequencies
+    pos_freqs = freqs[freqs >= 0]
+    pos_stft = stft[freqs >= 0]
+    # Compute spectral centroid
+    spectral_centroid = np.array([np.sum(f * s) / np.sum(s) if np.sum(s) > 0 else 0 for f, s in zip(pos_freqs, pos_stft)])
+    # Compute spectral bandwidth
+    spectral_bandwidth = np.array([np.sqrt(np.sum(((f - sc) ** 2) * s) / np.sum(s)) if np.sum(s) > 0 else 0 for f, s, sc in zip(pos_freqs, pos_stft, spectral_centroid)])
+    # Combine features
+    features = np.array([
+        np.mean(energy),
+        np.mean(zero_crossings),
+        np.mean(spectral_centroid),
+        np.mean(spectral_bandwidth),
+    ])
+    return features
 
 
 def compute_optical_flow_intensity(prev_roi: Optional[np.ndarray], curr_roi: Optional[np.ndarray]) -> float:
@@ -564,4 +635,3 @@ def create_hands_backend():
             "mediapipe_hands",
         )
     return None, "hands_unavailable"
-
