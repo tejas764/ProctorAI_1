@@ -206,6 +206,30 @@
       animation: flashAlert 0.8s ease-out;
     }
 
+    .face-vis-flash {
+      position: fixed;
+      top: 18px;
+      right: 18px;
+      max-width: min(420px, calc(100vw - 36px));
+      padding: 10px 14px;
+      border-radius: 10px;
+      border: 1px solid rgba(255, 93, 111, 0.5);
+      background: rgba(46, 11, 17, 0.92);
+      color: #ffd5db;
+      font-weight: 700;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+      opacity: 0;
+      transform: translateY(-8px);
+      pointer-events: none;
+      transition: opacity 0.2s ease, transform 0.2s ease;
+      z-index: 1200;
+    }
+
+    .face-vis-flash.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
     .calib-footer {
       display: flex;
       justify-content: space-between;
@@ -429,6 +453,7 @@
   </style>
 </head>
 <body>
+  <div id="faceVisFlash" class="face-vis-flash"></div>
   <div class="shell">
     <section id="calibScreen" class="calib">
       <div>
@@ -522,6 +547,7 @@
             <div class="stat"><div class="k">Gaze Calibration</div><div id="gazeCal" class="v">0%</div><div class="meter"><div id="gazeBar" class="fill"></div></div></div>
             <div class="stat"><div class="k">Speaker Decision</div><div id="spk" class="v">UNKNOWN</div></div>
             <div class="stat"><div class="k">Speaker Similarity</div><div id="sim" class="v">-</div><div class="meter"><div id="simBar" class="fill"></div></div></div>
+            <div class="stat"><div class="k">Speaker Energy</div><div id="energyMatch" class="v">-</div><div class="meter"><div id="energyBar" class="fill"></div></div></div>
             <div class="stat"><div class="k">Verification State</div><div id="vstate" class="v">YELLOW</div></div>
             <div class="stat"><div class="k">Escalation</div><div id="escalation" class="v">NORMAL</div></div>
             <div class="stat"><div class="k">Speaker Count</div><div id="spkCount" class="v">1</div></div>
@@ -572,6 +598,8 @@
     const spkEl = document.getElementById("spk");
     const simEl = document.getElementById("sim");
     const simBarEl = document.getElementById("simBar");
+    const energyMatchEl = document.getElementById("energyMatch");
+    const energyBarEl = document.getElementById("energyBar");
     const vstateEl = document.getElementById("vstate");
     const escalationEl = document.getElementById("escalation");
     const spkCountEl = document.getElementById("spkCount");
@@ -588,10 +616,16 @@
     const lastDetailsEl = document.getElementById("lastDetails");
     const frameEl = document.getElementById("camFrame");
     const eventConsoleEl = document.getElementById("eventConsole");
+    const faceVisFlashEl = document.getElementById("faceVisFlash");
 
     let latestState = {};
     let pollTimer = null;
     let prevState = null;
+    let faceVisFlashTimer = null;
+    let lastFaceVisFlashAt = 0;
+    const FACE_VISIBILITY_WARN_THRESHOLD = 0.6;
+    const FACE_VISIBILITY_FLASH_MS = 3000;
+    const FACE_VISIBILITY_FLASH_COOLDOWN_MS = 3200;
 
     const stepTargets = {
       CENTER: targetCenter,
@@ -629,6 +663,17 @@
       document.body.classList.remove("flash-alert");
       void document.body.offsetWidth; // Trigger reflow
       document.body.classList.add("flash-alert");
+    }
+
+    function showFaceVisibilityFlash(faceVisibility) {
+      faceVisFlashEl.textContent = "Face visiblity low";
+      faceVisFlashEl.classList.add("show");
+      if (faceVisFlashTimer) {
+        clearTimeout(faceVisFlashTimer);
+      }
+      faceVisFlashTimer = setTimeout(() => {
+        faceVisFlashEl.classList.remove("show");
+      }, FACE_VISIBILITY_FLASH_MS);
     }
 
     function streamStateLogs(s) {
@@ -690,6 +735,13 @@
       faceVisEl.textContent = fmt(faceVisibility);
       styleValue(faceVisEl, faceVisibility >= 0.6 ? "ok" : "err");
       faceVisBarEl.style.width = `${Math.max(0, Math.min(100, Math.round(100 * faceVisibility)))}%`;
+      if (faceVisibility < FACE_VISIBILITY_WARN_THRESHOLD) {
+        const now = Date.now();
+        if ((now - lastFaceVisFlashAt) >= FACE_VISIBILITY_FLASH_COOLDOWN_MS) {
+          lastFaceVisFlashAt = now;
+          showFaceVisibilityFlash(faceVisibility);
+        }
+      }
       const gp = Math.round(100 * Number(s.gaze_progress || 0));
       gazeCalEl.textContent = s.gaze_calibrated ? "Calibrated" : `${gp}%`;
       styleValue(gazeCalEl, s.gaze_calibrated ? "ok" : "warn");
@@ -705,6 +757,14 @@
       const simBar = Math.max(0, Math.min(100, Math.round(100 * Number(s.speaker_similarity_bar || 0))));
       simBarEl.style.width = `${simBar}%`;
       styleValue(simEl, simBar > 60 ? "ok" : (simBar > 40 ? "warn" : "err"));
+
+      const energyRatio = Number(s.speaker_energy_ratio);
+      const energyScore = Number(s.speaker_energy_score);
+      energyMatchEl.textContent = Number.isFinite(energyRatio) ? `${energyRatio.toFixed(2)}x` : "-";
+      const energyPct = Number.isFinite(energyScore) ? Math.max(0, Math.min(100, Math.round(100 * energyScore))) : 0;
+      energyBarEl.style.width = `${energyPct}%`;
+      const energyGood = Number.isFinite(energyRatio) && energyRatio >= 0.7 && energyRatio <= 1.4;
+      styleValue(energyMatchEl, energyGood ? "ok" : "warn");
 
       const vs = s.verification_state || "YELLOW";
       vstateEl.textContent = vs;

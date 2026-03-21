@@ -106,6 +106,11 @@ class MonitoringWorker:
             "speaker_decision": "UNKNOWN",
             "speaker_reason": "not_started",
             "speaker_similarity": None,
+            "speaker_similarity_avg": None,
+            "speaker_match_ratio": None,
+            "speaker_energy_ratio": None,
+            "speaker_energy_score": None,
+            "speaker_spoof_score": None,
             "speaker_threshold": None,
             "voice_drift": None,
             "drift_threshold": None,
@@ -481,25 +486,15 @@ class MonitoringWorker:
                     now_t = time.time()
                     primary_landmarks = faces[0] if faces else None
                     primary_bbox = face_boxes[0] if face_boxes else None
-                    occ_flag = occlusion_detector.update(
+                    occlusion_detector.update(
                         frame=frame,
                         landmarks=primary_landmarks,
                         face_bbox=primary_bbox,
                         now=now_t,
                     )
                     occ_state = occlusion_detector.state()
-                    if occ_flag == "FACE_OCCLUDED":
-                        self._flag_event(
-                            "FACE_OCCLUDED",
-                            risk,
-                            frame,
-                            mic.latest_seconds(1.0),
-                            {
-                                "face_visibility_ratio": float(occ_state.face_visibility_ratio),
-                                "occlusion_counter": int(occ_state.occlusion_counter),
-                            },
-                            cooldown_s=6.0,
-                        )
+                    # Do not log FACE_OCCLUDED into risk/event logs.
+                    # Face visibility is still tracked in worker state for UI warnings.
 
                     if num_faces == last_face_count:
                         stable_face_streak += 1
@@ -664,13 +659,13 @@ class MonitoringWorker:
                                 reason="no_speech_window",
                             )
 
-                        if speech_window_active and multi_cache.speaker_count > 1:
+                        if stable_faces > 1:
                             self._flag_event(
                                 "MULTIPLE_FACES",
                                 risk,
                                 frame,
                                 window_audio,
-                                {"reason": "multiple_speakers_detected", "confidence": multi_cache.confidence},
+                                {"reason": "multiple_faces_in_frame", "confidence": float(stable_faces)},
                             )
 
                         if speech_window_active:
@@ -757,6 +752,11 @@ class MonitoringWorker:
                         speaker_decision=spk.decision,
                         speaker_reason=spk.reason,
                         speaker_similarity=None if spk.similarity is None else float(spk.similarity),
+                        speaker_similarity_avg=None if spk.similarity_avg is None else float(spk.similarity_avg),
+                        speaker_match_ratio=None if spk.match_ratio is None else float(spk.match_ratio),
+                        speaker_energy_ratio=None if spk.energy_ratio is None else float(spk.energy_ratio),
+                        speaker_energy_score=None if spk.energy_score is None else float(spk.energy_score),
+                        speaker_spoof_score=None if spk.spoof_score is None else float(spk.spoof_score),
                         speaker_threshold=None if spk.threshold is None else float(spk.threshold),
                         voice_drift=None if spk.drift is None else float(spk.drift),
                         drift_threshold=None if spk.drift_threshold is None else float(spk.drift_threshold),
@@ -781,7 +781,7 @@ class MonitoringWorker:
                         gaze_calibrated=bool(gaze_cache.calibrated),
                         gaze_progress=float(gaze_cache.progress),
                         face_model_backend=active_face_model,
-                        face_visibility_ratio=float(occ_state.face_visibility_ratio),
+                        face_visibility_ratio=(0.0 if stable_faces == 0 else float(occ_state.face_visibility_ratio)),
                         face_occlusion_counter=int(occ_state.occlusion_counter),
                         face_occlusion_cooldown_active=bool(occ_state.cooldown_active),
                         face_occlusion_cooldown_remaining=float(occ_state.cooldown_remaining),
