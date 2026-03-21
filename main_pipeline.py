@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections import deque
 from dataclasses import dataclass
+import threading
 import time
 from typing import Any, Optional
 
@@ -85,13 +86,21 @@ class AudioMonitor:
         self.vad_threshold = vad_threshold
         self._stream = None
         self._latest = np.zeros((block_size,), dtype=np.float32)
-        self._buffer = deque(maxlen=sample_rate * 4)  # 4s rolling
+        self._buffer: deque[np.ndarray] = deque()
+        self._buffer_samples = 0
+        self._max_buffer = sample_rate * 4  # 4s rolling
+        self._lock = threading.Lock()
 
     def _callback(self, indata, frames, callback_time, status) -> None:
         del frames, callback_time, status
-        mono = indata[:, 0].astype(np.float32)
-        self._latest = mono
-        self._buffer.extend(mono.tolist())
+        mono = indata[:, 0].astype(np.float32).copy()
+        with self._lock:
+            self._latest = mono
+            self._buffer.append(mono)
+            self._buffer_samples += mono.size
+            while self._buffer and self._buffer_samples > self._max_buffer:
+                dropped = self._buffer.popleft()
+                self._buffer_samples -= dropped.size
 
     def start(self) -> None:
         if sd is None:
@@ -111,19 +120,38 @@ class AudioMonitor:
             self._stream = None
 
     def audio_chunk(self) -> np.ndarray:
-        return self._latest.copy()
+        with self._lock:
+            return self._latest.copy()
 
     def latest_seconds(self, seconds: float) -> np.ndarray:
         n = int(max(1, seconds * self.sample_rate))
-        arr = np.array(self._buffer, dtype=np.float32)
+        with self._lock:
+            if not self._buffer:
+                return np.empty((0,), dtype=np.float32)
+            chunks: list[np.ndarray] = []
+            collected = 0
+            for block in reversed(self._buffer):
+                chunks.append(block)
+                collected += block.size
+                if collected >= n:
+                    break
+        arr = np.concatenate(chunks[::-1]) if chunks else np.empty((0,), dtype=np.float32)
         return arr[-n:] if arr.size >= n else arr
 
     def rms(self) -> float:
-        chunk = self.audio_chunk()
+        with self._lock:
+            chunk = self._latest
         return float(np.sqrt(np.mean(chunk * chunk))) if chunk.size else 0.0
 
+    def rms_and_vad(self) -> tuple[float, bool]:
+        with self._lock:
+            chunk = self._latest
+            rms = float(np.sqrt(np.mean(chunk * chunk))) if chunk.size else 0.0
+            return rms, rms >= self.vad_threshold
+
     def vad(self) -> bool:
-        return self.rms() >= self.vad_threshold
+        _, audio_present = self.rms_and_vad()
+        return audio_present
 
 
 @dataclass
@@ -219,8 +247,7 @@ class ExamProctorPipeline:
                 frame = cv2.flip(frame, 1)
                 t = time.time() - start_time
                 audio_chunk = self.audio.audio_chunk()
-                audio_present = self.audio.vad()
-                audio_energy = self.audio.rms()
+                audio_energy, audio_present = self.audio.rms_and_vad()
                 speaker_window_audio = self.audio.latest_seconds(self.cfg.speaker_window_seconds)
                 spk = self.speaker.verify(speaker_window_audio, audio_present=audio_present, timestamp_s=t)
 

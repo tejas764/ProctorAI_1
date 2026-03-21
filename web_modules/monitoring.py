@@ -449,8 +449,7 @@ class MonitoringWorker:
 
                     frame = cv2.flip(frame, 1)
                     frame_index += 1
-                    audio_present = mic.vad()
-                    audio_rms = mic.rms()
+                    audio_rms, audio_present = mic.analyze_level()
                     faces = []
                     face_boxes: list[tuple[int, int, int, int]] = []
                     num_faces = 0
@@ -730,7 +729,6 @@ class MonitoringWorker:
 
                     # Run phone detection every ~1.5 seconds (45 frames)
                     if (frame_index - last_phone_check) >= 45:
-                        detect_start = time.time()
                         has_phone = phone_detector.detect(frame)
                         last_phone_check = frame_index
                         if has_phone:
