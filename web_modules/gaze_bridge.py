@@ -23,6 +23,9 @@ class GazeReading:
     step_progress: float = 0.0
     awaiting_start: bool = False
     prompt: str = ""
+    countdown_active: bool = False
+    countdown_remaining: float = 0.0
+    capturing: bool = False
 
 
 # Keys from calibration_state() that are valid GazeReading fields
@@ -73,6 +76,9 @@ class GazeEngine:
         self._prev_dx = 0.0
         self._prev_dy = 0.0
         self._confidence_history: list[float] = []
+        self._smoothed_confidence = 0.0
+        self._no_face_streak = 0
+        self._no_face_grace_frames = 3
         self._ready = False
         self._error = ""
         self._current_status = "INSIDE"
@@ -243,6 +249,8 @@ class GazeEngine:
         self._prev_dx = 0.0
         self._prev_dy = 0.0
         self._confidence_history = []
+        self._smoothed_confidence = 0.0
+        self._no_face_streak = 0
         self._current_status = "INSIDE"
         self._calib_index = 0
         self._start_pressed = False
@@ -327,6 +335,8 @@ class GazeEngine:
         self._prev_dx = 0.0
         self._prev_dy = 0.0
         self._confidence_history = []
+        self._smoothed_confidence = 0.0
+        self._no_face_streak = 0
         self._current_status = "INSIDE"
         self._calib_index = 0
         self._start_pressed = False
@@ -348,7 +358,11 @@ class GazeEngine:
         self._mean_gaze = np.mean(center_samples, axis=0).astype(np.float32)
         features_4d = samples[:, 0:4]
         cov_gaze = np.cov(features_4d.T)
-        self._inv_cov = np.linalg.inv(cov_gaze + 1e-6 * np.eye(4, dtype=np.float32)).astype(np.float32)
+        cov_reg = cov_gaze + 1e-6 * np.eye(4, dtype=np.float32)
+        try:
+            self._inv_cov = np.linalg.inv(cov_reg).astype(np.float32)
+        except np.linalg.LinAlgError:
+            self._inv_cov = np.linalg.pinv(cov_reg).astype(np.float32)
         horizontal_scores = np.abs(samples[:, 0]) + self.head_weight * np.abs(samples[:, 2])
         vertical_scores = np.abs(samples[:, 1]) + self.head_weight * np.abs(samples[:, 3])
         self._h_threshold = float(np.percentile(horizontal_scores, 95) * self.geometric_margin)
@@ -381,6 +395,8 @@ class GazeEngine:
         self._capturing = False
         self._frames_captured = 0
         self._confidence_history = []
+        self._smoothed_confidence = 0.0
+        self._no_face_streak = 0
         self._current_status = "INSIDE"
         self._outside_counter = 0
 
@@ -433,14 +449,21 @@ class GazeEngine:
             return GazeReading(status="CALIBRATING", confidence=1.0, calibrated=False, error=self._error, **_reading_kwargs(state))
 
         if feats is None:
+            self._no_face_streak += 1
+            if self._no_face_streak <= self._no_face_grace_frames and self._current_status in {"INSIDE", "OUTSIDE"}:
+                held_conf = float(max(0.0, self._smoothed_confidence * 0.92))
+                return GazeReading(status=self._current_status, confidence=held_conf, calibrated=True, error=self._error, **_reading_kwargs(state))
+            self._smoothed_confidence = 0.0
             return GazeReading(status="NO_FACE", confidence=0.0, calibrated=True, error=self._error, **_reading_kwargs(state))
+        self._no_face_streak = 0
 
         dx_raw, dy_raw, yaw, pitch = feats
         dx = self.smoothing * self._prev_dx + (1.0 - self.smoothing) * float(dx_raw)
         dy = self.smoothing * self._prev_dy + (1.0 - self.smoothing) * float(dy_raw)
         self._prev_dx, self._prev_dy = dx, dy
 
-        diff = np.array([dx, dy, float(yaw), float(pitch)], dtype=np.float32) - self._mean_gaze
+        current = np.array([dx, dy, float(yaw), float(pitch)], dtype=np.float32)
+        diff = current - self._mean_gaze
         maha = float(np.sqrt(diff.T @ self._inv_cov @ diff))
         maha_score = max(0.0, 1.0 - (maha / self.mahalanobis_threshold))
         horizontal_score = abs(dx) + self.head_weight * abs(float(yaw))
@@ -457,13 +480,16 @@ class GazeEngine:
         self._confidence_history.append(confidence)
         if len(self._confidence_history) > self._confidence_window:
             self._confidence_history.pop(0)
-        smoothed_confidence = float(np.mean(self._confidence_history))
+        window_conf = float(np.mean(self._confidence_history)) if self._confidence_history else confidence
+        # Small EMA over the confidence window makes gaze state transitions cleaner.
+        self._smoothed_confidence = 0.72 * self._smoothed_confidence + 0.28 * window_conf
+        smoothed_confidence = float(max(0.0, min(1.0, self._smoothed_confidence)))
 
         if self._current_status == "INSIDE":
             if smoothed_confidence >= self._outside_threshold:
                 status = "INSIDE"
                 self._outside_counter = 0
-                self._mean_gaze = (1.0 - self.adapt_rate) * self._mean_gaze + self.adapt_rate * np.array([dx, dy, float(yaw), float(pitch)], dtype=np.float32)
+                self._mean_gaze = (1.0 - self.adapt_rate) * self._mean_gaze + self.adapt_rate * current
             else:
                 self._outside_counter += 1
                 if self._outside_counter >= self.outside_confirm_frames:
@@ -476,7 +502,7 @@ class GazeEngine:
                 status = "INSIDE"
                 self._current_status = "INSIDE"
                 self._outside_counter = 0
-                self._mean_gaze = (1.0 - self.adapt_rate) * self._mean_gaze + self.adapt_rate * np.array([dx, dy, float(yaw), float(pitch)], dtype=np.float32)
+                self._mean_gaze = (1.0 - self.adapt_rate) * self._mean_gaze + self.adapt_rate * current
             else:
                 status = "OUTSIDE"
                 self._outside_counter += 1

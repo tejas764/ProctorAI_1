@@ -545,6 +545,13 @@ class MonitoringWorker:
 
                     if not gaze_cache.calibrated or gaze_cache.status in {"CALIBRATING", "OUTSIDE", "ERROR"}:
                         gaze_stride = 1
+                    elif (
+                        stable_faces == 1
+                        and stable_face_streak >= 20
+                        and gaze_cache.status == "INSIDE"
+                        and float(gaze_cache.confidence) >= 0.75
+                    ):
+                        gaze_stride = 8
                     elif stable_faces == 1 and stable_face_streak >= 10 and gaze_cache.status == "INSIDE":
                         gaze_stride = 6
                     else:
@@ -553,11 +560,10 @@ class MonitoringWorker:
                     if gaze_ok and (frame_index % gaze_stride == 0):
                         gaze_cache = gaze_engine.process(frame)
                         self._apply_gaze_reading(gaze_cache)
-                        gaze_state = gaze_engine.calibration_state()
                         self._update_state(
-                            gaze_countdown_active=bool(gaze_state.get("countdown_active", False)),
-                            gaze_countdown_remaining=float(gaze_state.get("countdown_remaining", 0.0)),
-                            gaze_capturing=bool(gaze_state.get("capturing", False)),
+                            gaze_countdown_active=bool(gaze_cache.countdown_active),
+                            gaze_countdown_remaining=float(gaze_cache.countdown_remaining),
+                            gaze_capturing=bool(gaze_cache.capturing),
                         )
                     elif not gaze_ok:
                         gaze_cache = GazeReading(
