@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import shutil
 import signal
 import subprocess
 import sys
@@ -19,9 +20,70 @@ def _stream_output(prefix: str, pipe) -> None:
         print(f"[{prefix}] {line.rstrip()}")
 
 
+def _resolve_frontend_command() -> list[str]:
+    frontend_npm = os.environ.get("FRONTEND_NPM")
+    if frontend_npm:
+        return [frontend_npm, "run", "dev"]
+
+    npm_exe = shutil.which("npm.cmd") or shutil.which("npm")
+    if npm_exe:
+        return [npm_exe, "run", "dev"]
+
+    vite_cmd = FRONTEND_DIR / "node_modules" / ".bin" / ("vite.cmd" if os.name == "nt" else "vite")
+    if vite_cmd.exists():
+        return [str(vite_cmd)]
+
+    raise FileNotFoundError(
+        "Unable to locate npm or local Vite binary. Install Node.js (npm) or run `npm install` in react_dashboard_app."
+    )
+
+
+def _check_backend_prereqs() -> str | None:
+    try:
+        subprocess.run(
+            [sys.executable, "-c", "import flask"],
+            check=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        return (
+            "Backend dependency missing: Flask is not installed in the active Python environment. "
+            "Run `python -m pip install -r requirement.txt`."
+        )
+    return None
+
+
+def _check_frontend_prereqs(frontend_cmd: list[str]) -> str | None:
+    # vite(.cmd) shells out to node, so make sure Node is available before launch.
+    first = frontend_cmd[0].lower()
+    if "vite" in first and shutil.which("node") is None:
+        return (
+            "Frontend dependency missing: Node.js runtime was not found in PATH. "
+            "Install Node.js, then reopen terminal/IDE so PATH updates."
+        )
+    return None
+
+
 def main() -> int:
     backend_cmd = [sys.executable, "web_enrollment_app.py"]
-    frontend_cmd = ["npm.cmd", "run", "dev"]
+    try:
+        frontend_cmd = _resolve_frontend_command()
+    except FileNotFoundError as exc:
+        print(str(exc))
+        return 1
+
+    preflight_errors = [
+        err
+        for err in (_check_backend_prereqs(), _check_frontend_prereqs(frontend_cmd))
+        if err is not None
+    ]
+    if preflight_errors:
+        print("Startup checks failed:")
+        for err in preflight_errors:
+            print(f"- {err}")
+        return 1
+
     backend_env = os.environ.copy()
     backend_env.setdefault("PG_DEBUG", "0")
     backend_env.setdefault("TF_CPP_MIN_LOG_LEVEL", "2")
@@ -38,15 +100,27 @@ def main() -> int:
         text=True,
         bufsize=1,
     )
-    frontend = subprocess.Popen(
-        frontend_cmd,
-        cwd=str(FRONTEND_DIR),
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        text=True,
-        bufsize=1,
-        shell=False,
-    )
+    try:
+        frontend = subprocess.Popen(
+            frontend_cmd,
+            cwd=str(FRONTEND_DIR),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            bufsize=1,
+            shell=False,
+        )
+    except FileNotFoundError as exc:
+        print(f"Failed to start frontend command: {' '.join(frontend_cmd)}")
+        print(f"Reason: {exc}")
+        print("Tip: install Node.js (which includes npm) and run `npm install` inside react_dashboard_app.")
+        if backend.poll() is None:
+            backend.terminate()
+            try:
+                backend.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                backend.kill()
+        return 1
 
     threads = [
         threading.Thread(target=_stream_output, args=("BACKEND", backend.stdout), daemon=True),
