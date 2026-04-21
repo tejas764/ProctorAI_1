@@ -1,90 +1,17 @@
 {
-  "generated_at": "2026-03-22T06:49:59.836302+00:00",
-  "risk_score": 23,
-  "risk_level": "CHEATING_LIKELY",
+  "generated_at": "2026-04-21T19:58:15.923437+00:00",
+  "risk_score": 1,
+  "risk_level": "NORMAL",
   "events": [
     {
-      "timestamp_s": 1774162171.0275183,
-      "reason": "GAZE_OUTSIDE",
+      "timestamp_s": 1776801476.320215,
+      "reason": "PHONE_DETECTED",
       "risk_delta": 1,
       "risk_total": 1,
-      "frame_path": "proctor_logs\\frames\\1774162171027_gaze_outside.jpg",
-      "audio_path": "proctor_logs\\audio\\1774162171027_gaze_outside.wav",
+      "frame_path": "proctor_logs\\frames\\1776801476320_phone_detected.jpg",
+      "audio_path": "proctor_logs\\audio\\1776801476320_phone_detected.wav",
       "details": {
-        "gaze_confidence": 0.0,
-        "gaze_status": "OUTSIDE"
-      }
-    },
-    {
-      "timestamp_s": 1774162184.439826,
-      "reason": "GAZE_OUTSIDE",
-      "risk_delta": 1,
-      "risk_total": 2,
-      "frame_path": "proctor_logs\\frames\\1774162184439_gaze_outside.jpg",
-      "audio_path": "proctor_logs\\audio\\1774162184439_gaze_outside.wav",
-      "details": {
-        "gaze_confidence": 0.005190009162539533,
-        "gaze_status": "OUTSIDE"
-      }
-    },
-    {
-      "timestamp_s": 1774162186.63251,
-      "reason": "MULTIPLE_FACES",
-      "risk_delta": 5,
-      "risk_total": 7,
-      "frame_path": "proctor_logs\\frames\\1774162186632_multiple_faces.jpg",
-      "audio_path": "proctor_logs\\audio\\1774162186632_multiple_faces.wav",
-      "details": {
-        "reason": "multiple_faces_in_frame",
-        "confidence": 2.0
-      }
-    },
-    {
-      "timestamp_s": 1774162191.6078258,
-      "reason": "MULTIPLE_FACES",
-      "risk_delta": 5,
-      "risk_total": 12,
-      "frame_path": "proctor_logs\\frames\\1774162191607_multiple_faces.jpg",
-      "audio_path": "proctor_logs\\audio\\1774162191607_multiple_faces.wav",
-      "details": {
-        "reason": "multiple_faces_in_frame",
-        "confidence": 2.0
-      }
-    },
-    {
-      "timestamp_s": 1774162193.670595,
-      "reason": "MULTIPLE_FACES",
-      "risk_delta": 5,
-      "risk_total": 17,
-      "frame_path": "proctor_logs\\frames\\1774162193670_multiple_faces.jpg",
-      "audio_path": "proctor_logs\\audio\\1774162193670_multiple_faces.wav",
-      "details": {
-        "reason": "multiple_faces_in_frame",
-        "confidence": 2.0
-      }
-    },
-    {
-      "timestamp_s": 1774162197.637271,
-      "reason": "GAZE_OUTSIDE",
-      "risk_delta": 1,
-      "risk_total": 18,
-      "frame_path": "proctor_logs\\frames\\1774162197637_gaze_outside.jpg",
-      "audio_path": "proctor_logs\\audio\\1774162197637_gaze_outside.wav",
-      "details": {
-        "gaze_confidence": 0.0,
-        "gaze_status": "OUTSIDE"
-      }
-    },
-    {
-      "timestamp_s": 1774162198.8711605,
-      "reason": "MULTIPLE_FACES",
-      "risk_delta": 5,
-      "risk_total": 23,
-      "frame_path": "proctor_logs\\frames\\1774162198871_multiple_faces.jpg",
-      "audio_path": "proctor_logs\\audio\\1774162198871_multiple_faces.wav",
-      "details": {
-        "reason": "multiple_faces_in_frame",
-        "confidence": 2.0
+        "confidence": "high"
       }
     }
   ]
