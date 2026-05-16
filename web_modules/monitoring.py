@@ -71,6 +71,49 @@ def compute_mar(face_landmarks: object) -> float:
     return float(vertical / horizontal)
 
 
+def _bbox_from_landmarks(face_landmarks: object, frame_shape: tuple[int, ...]) -> tuple[int, int, int, int] | None:
+    pts = getattr(face_landmarks, "landmark", None)
+    if not pts:
+        return None
+    h, w = frame_shape[:2]
+    xs = [int(p.x * w) for p in pts]
+    ys = [int(p.y * h) for p in pts]
+    if not xs or not ys:
+        return None
+    x1 = max(0, min(xs))
+    y1 = max(0, min(ys))
+    x2 = min(w - 1, max(xs))
+    y2 = min(h - 1, max(ys))
+    if x2 <= x1 or y2 <= y1:
+        return None
+    return (x1, y1, x2, y2)
+
+
+def _create_opencv_tracker() -> object | None:
+    tracker_ctor_names = (
+        "TrackerCSRT_create",
+        "TrackerKCF_create",
+        "TrackerMOSSE_create",
+    )
+    for name in tracker_ctor_names:
+        ctor = getattr(cv2, name, None)
+        if callable(ctor):
+            try:
+                return ctor()
+            except Exception:
+                continue
+    legacy = getattr(cv2, "legacy", None)
+    if legacy is not None:
+        for name in tracker_ctor_names:
+            ctor = getattr(legacy, name, None)
+            if callable(ctor):
+                try:
+                    return ctor()
+                except Exception:
+                    continue
+    return None
+
+
 class MonitoringWorker:
     def __init__(
         self,
@@ -407,6 +450,11 @@ class MonitoringWorker:
             last_faces: list[object] = []
             last_num_faces = 0
             last_face_boxes: list[tuple[int, int, int, int]] = []
+            tracker = None
+            tracker_active = False
+            tracker_bbox_xyxy: tuple[int, int, int, int] | None = None
+            tracker_force_redetect_every = 20
+            tracker_frames_since_detect = 0
             last_verify_t = 0.0
             verify_interval_s = 1.0
             min_voice_policy_rms = 0.012
@@ -472,13 +520,60 @@ class MonitoringWorker:
                             face_mesh_stride = 8
 
                         run_face_mesh = (frame_index % face_mesh_stride == 0) or (frame_index <= 2)
+                        if tracker_active:
+                            run_face_mesh = run_face_mesh or (tracker_frames_since_detect >= tracker_force_redetect_every)
+                        else:
+                            run_face_mesh = True
+
+                        tracked_box = None
+                        if tracker_active and tracker is not None:
+                            ok_track, tracked = tracker.update(frame)
+                            if ok_track:
+                                tx, ty, tw, th = tracked
+                                x1 = max(0, int(tx))
+                                y1 = max(0, int(ty))
+                                x2 = min(frame.shape[1] - 1, int(tx + tw))
+                                y2 = min(frame.shape[0] - 1, int(ty + th))
+                                if x2 > x1 and y2 > y1:
+                                    tracked_box = (x1, y1, x2, y2)
+                                    tracker_bbox_xyxy = tracked_box
+                            else:
+                                tracker_active = False
+                                tracker = None
+                                tracker_bbox_xyxy = None
+                                run_face_mesh = True
+
                         if run_face_mesh:
                             rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                             res = face_mesh.process(rgb)
                             last_faces = res.multi_face_landmarks if res.multi_face_landmarks else []
                             last_num_faces = len(last_faces)
+                            tracker_frames_since_detect = 0
+                            if last_num_faces == 1:
+                                lm_box = _bbox_from_landmarks(last_faces[0], frame.shape)
+                                if lm_box is not None:
+                                    x1, y1, x2, y2 = lm_box
+                                    t = _create_opencv_tracker()
+                                    if t is not None:
+                                        tracker = t
+                                        try:
+                                            tracker.init(frame, (x1, y1, max(1, x2 - x1), max(1, y2 - y1)))
+                                            tracker_active = True
+                                            tracker_bbox_xyxy = lm_box
+                                        except Exception:
+                                            tracker_active = False
+                                            tracker = None
+                                            tracker_bbox_xyxy = None
+                            else:
+                                tracker_active = False
+                                tracker = None
+                                tracker_bbox_xyxy = None
+                        else:
+                            tracker_frames_since_detect += 1
                         faces = last_faces
                         num_faces = last_num_faces
+                        if num_faces == 1 and tracker_bbox_xyxy is not None:
+                            face_boxes = [tracker_bbox_xyxy]
                     else:
                         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
                         gray_eq = cv2.equalizeHist(gray)
@@ -502,7 +597,8 @@ class MonitoringWorker:
                             num_faces = 0
 
                     now_t = time.time()
-                    primary_landmarks = faces[0] if faces else None
+                    shared_landmarks = faces[0] if (face_mesh is not None and faces) else None
+                    primary_landmarks = shared_landmarks
                     primary_bbox = face_boxes[0] if face_boxes else None
                     occlusion_detector.update(
                         frame=frame,
@@ -558,7 +654,11 @@ class MonitoringWorker:
                         gaze_stride = 2
 
                     if gaze_ok and (frame_index % gaze_stride == 0):
-                        gaze_cache = gaze_engine.process(frame)
+                        gaze_cache = gaze_engine.process(
+                            frame,
+                            shared_landmarks=shared_landmarks,
+                            shared_face_bbox=primary_bbox,
+                        )
                         self._apply_gaze_reading(gaze_cache)
                         self._update_state(
                             gaze_countdown_active=bool(gaze_cache.countdown_active),

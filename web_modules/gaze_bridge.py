@@ -400,13 +400,27 @@ class GazeEngine:
         self._current_status = "INSIDE"
         self._outside_counter = 0
 
-    def process(self, frame: np.ndarray) -> GazeReading:
+    def process(
+        self,
+        frame: np.ndarray,
+        shared_landmarks: Any | None = None,
+        shared_face_bbox: tuple[int, int, int, int] | None = None,
+    ) -> GazeReading:
         if not self._ready or self._module is None or self._models is None:
             state = self.calibration_state()
             return GazeReading(status="DISABLED", confidence=0.0, calibrated=False, error=self._error or "not_ready", **_reading_kwargs(state))
 
         try:
-            feats = self._module.get_features(frame, self._models)
+            getter = getattr(self._module, "get_features_from_hints", None)
+            if callable(getter):
+                feats = getter(
+                    frame,
+                    self._models,
+                    shared_landmarks=shared_landmarks,
+                    shared_face_bbox=shared_face_bbox,
+                )
+            else:
+                feats = self._module.get_features(frame, self._models)
         except Exception as exc:  # noqa: BLE001
             self._error = str(exc)
             state = self.calibration_state()

@@ -79,7 +79,12 @@ def create_app() -> Flask:
                 import time
                 time.sleep(0.04)  # ~25 FPS push
 
-        return Response(generate(), mimetype="multipart/x-mixed-replace; boundary=frame")
+        response = Response(generate(), mimetype="multipart/x-mixed-replace; boundary=frame")
+        response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"
+        response.headers["X-Accel-Buffering"] = "no"
+        return response
 
     @app.get("/api/enrollment/questions")
     def questions() -> object:

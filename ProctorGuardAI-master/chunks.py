@@ -183,6 +183,72 @@ def get_features(frame, models):
 
     return float(dx), float(dy), float(yaw), float(pitch)
 
+
+def get_features_from_hints(frame, models, shared_landmarks=None, shared_face_bbox=None):
+    # Reuse upstream face box when available to avoid repeating face detection.
+    # Falls back to full detection when hints are missing or invalid.
+    scale = FRAME_WIDTH / frame.shape[1]
+    frame = cv2.resize(frame, (FRAME_WIDTH, int(frame.shape[0] * scale)))
+
+    bbox = None
+    if shared_face_bbox is not None:
+        try:
+            x1, y1, x2, y2 = shared_face_bbox
+            x1 = int(round(x1 * scale))
+            y1 = int(round(y1 * scale))
+            x2 = int(round(x2 * scale))
+            y2 = int(round(y2 * scale))
+            x1 = max(0, min(frame.shape[1] - 1, x1))
+            y1 = max(0, min(frame.shape[0] - 1, y1))
+            x2 = max(0, min(frame.shape[1] - 1, x2))
+            y2 = max(0, min(frame.shape[0] - 1, y2))
+            if x2 > x1 and y2 > y1:
+                bbox = (x1, y1, x2, y2)
+        except Exception:
+            bbox = None
+
+    if bbox is None:
+        face_blob = preprocess(frame, models["face"].input(0).shape)
+        dets = list(models["face"](face_blob).values())[0]
+        bbox = largest_face(dets, frame.shape)
+        if bbox is None:
+            return None
+
+    x1, y1, x2, y2 = bbox
+    face = frame[y1:y2, x1:x2]
+    if face.size == 0:
+        return None
+
+    lm_blob = preprocess(face, models["landmarks"].input(0).shape)
+    lm = list(models["landmarks"](lm_blob).values())[0].reshape(-1)
+
+    fx, fy = face.shape[1], face.shape[0]
+    left_eye = (x1 + int(lm[0] * fx), y1 + int(lm[1] * fy))
+    right_eye = (x1 + int(lm[2] * fx), y1 + int(lm[3] * fy))
+
+    le = crop_square(frame, left_eye, EYE_SIZE)
+    re = crop_square(frame, right_eye, EYE_SIZE)
+
+    hp_blob = preprocess(face, models["head_pose"].input(0).shape)
+    hp_out = models["head_pose"](hp_blob)
+    yaw, pitch, roll = [v.flatten()[0] for v in hp_out.values()]
+
+    gz_inputs = {
+        models["gaze"].inputs[0].any_name:
+            preprocess(le, models["gaze"].inputs[0].shape),
+        models["gaze"].inputs[1].any_name:
+            preprocess(re, models["gaze"].inputs[1].shape),
+        models["gaze"].inputs[2].any_name:
+            np.array([[yaw, pitch, roll]], dtype=np.float32)
+    }
+
+    gv = list(models["gaze"](gz_inputs).values())[0][0]
+
+    dx = gv[0] + yaw * 0.002
+    dy = gv[1] + pitch * 0.002
+
+    return float(dx), float(dy), float(yaw), float(pitch)
+
 # ==========================
 # MAIN ENGINE
 # ==========================
