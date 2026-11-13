@@ -1,6 +1,6 @@
 # ProctorAI (ProctorGuard Voice + LipSync + Gaze)
 
-Production-oriented exam proctoring pipeline that combines:
+Research prototype for an exam proctoring pipeline that combines:
 - real-time voice biometrics,
 - lip-sync verification,
 - gaze tracking with per-user calibration,
@@ -11,6 +11,8 @@ The repository includes two runnable tracks:
 - `main_pipeline.py` / `chunks_modules`: direct CV/audio pipelines for desktop/live processing.
 
 ---
+
+[Overview](#1-what-this-system-does) · [Architecture](#2-high-level-architecture) · [Setup](#9-setup-and-run) · [API](#7-api-endpoints-flask) · [Contributing](CONTRIBUTING.md) · [Security](SECURITY.md) · [License](LICENSE)
 
 ## 1. What This System Does
 
@@ -29,26 +31,15 @@ When anomalies are detected, it writes:
 
 ## 2. High-Level Architecture
 
-```text
-                 +----------------------+
- Camera Frames ->| Face / Mouth / Gaze  |--+
-                 +----------------------+  |
-                                           v
-                                    +-------------+
- Microphone ----------------------->| AV + Voice  |
-                                    | Analytics   |
-                                    +------+------+ 
-                                           |
-                                           v
-                                    +-------------+
-                                    | Decision +  |
-                                    | Risk Engine |
-                                    +------+------+ 
-                                           |
-                +--------------------------+--------------------------+
-                v                                                     v
-     State/API for UI (Flask)                              Evidence + Events
- (`/api/monitor/*`, `/api/enrollment/*`)               (`proctor_logs/*`, JSON)
+```mermaid
+flowchart TD
+    Camera["Camera"] --> Visual["Face, mouth and gaze analysis"]
+    Mic["Microphone"] --> Audio["Voice and audio analysis"]
+    Visual --> Fusion["Audio-visual correlation"]
+    Audio --> Fusion
+    Fusion --> Risk["Risk scoring"]
+    Risk --> UI["Flask dashboard"]
+    Risk --> Evidence["Events and evidence"]
 ```
 
 ---
@@ -207,6 +198,15 @@ Important keys:
 
 ### 9.1 Environment
 
+Clone the repository first:
+
+```bash
+git clone https://github.com/tejas764/ProctorAI_1.git
+cd ProctorAI_1
+```
+
+A camera, microphone, compatible Python environment, and the referenced OpenVINO models are required. Check dependency compatibility before selecting a Python version.
+
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
@@ -294,3 +294,11 @@ Each event contributes weighted delta to `risk_score`; levels are:
 4. Add unit/integration tests around risk escalation and event cooldown logic.
 5. Containerize web service and separate DB/log storage for production.
 
+
+## 15. Interpretation and project policies
+
+Risk flags are heuristic review signals, not proof of cheating. Validate false positives across lighting, audio conditions, and individual users; decisions about students require human review. Use consented recordings and protect biometric data and evidence logs.
+
+- [Contribution guide](CONTRIBUTING.md)
+- [Security policy](SECURITY.md)
+- [License terms](LICENSE)
