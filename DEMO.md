@@ -1,4 +1,28 @@
-# Demo preparation
+<p align="center">
+  <a href="README.md"><strong>OVERVIEW</strong></a> &nbsp; · &nbsp;
+  <a href="DEMO.md"><strong>DEMO & SCREENSHOTS</strong></a> &nbsp; · &nbsp;
+  <a href="DEMO.md#demo-setup"><strong>SETUP & DEPLOYMENT</strong></a>
+</p>
+
+<div align="center">
+
+# Demo Studio
+
+**ProctorAI_1**
+
+Walk through the experience. Explore the visuals. Prepare your demo.
+
+</div>
+
+---
+
+## Visual preview
+
+> **Preview status:** Fresh application screenshots have not yet been captured. The walkthrough below describes how to prepare the demo.
+
+---
+
+<a id="demo-setup"></a>
 
 ## Setup
 
